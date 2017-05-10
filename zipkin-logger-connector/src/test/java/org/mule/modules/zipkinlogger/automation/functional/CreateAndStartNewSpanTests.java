@@ -11,8 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mule.api.MuleContext;
 import org.mule.modules.zipkinlogger.ZipkinLoggerConnector;
+import org.mule.modules.zipkinlogger.model.LoggerTags;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
+import brave.Span.Kind;
 import brave.Tracer;
 import brave.Tracing;
 import zipkin.Span;
@@ -49,7 +51,11 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 	@Test
 	public void testStandaloneSpan() {
 
-		brave.Span span = getConnector().createAndStartSpan(null, "123", "SERVER", false, "test");
+		LoggerTags tags = new LoggerTags();
+		tags.addTag("test1", "value123");
+		tags.addTag("test2", "value789");
+
+		brave.Span span = getConnector().createAndStartSpan(null, "standalone_id", tags, Kind.SERVER, "myspan", "test");
 		Long spanId = span.context().spanId();
 		brave.Span result = getConnector().finishSpan(spanId.toString());
 

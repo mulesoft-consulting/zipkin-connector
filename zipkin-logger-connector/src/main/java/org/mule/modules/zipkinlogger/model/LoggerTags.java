@@ -8,8 +8,11 @@ public class LoggerTags {
 
     private List<BinaryAnnotation> binaryAnnotations = new ArrayList<BinaryAnnotation>();
 
-    public LoggerTags(ArrayList<BinaryAnnotation> arrayList) {
+    public LoggerTags(List<BinaryAnnotation> arrayList) {
     	this.binaryAnnotations = arrayList;
+	}
+
+	public LoggerTags() {
 	}
 
 	public List<BinaryAnnotation> getBinaryAnnotations() {
@@ -18,6 +21,15 @@ public class LoggerTags {
 
     public void setBinaryAnnotations(List<BinaryAnnotation> binaryAnnotations) {
         this.binaryAnnotations = binaryAnnotations;
+    }
+    
+    public void addTag(String key, String value) {
+    	
+    	BinaryAnnotation ann = new BinaryAnnotation();
+    	ann.setKey(key);
+    	ann.setValue(value);
+    	
+    	binaryAnnotations.add(ann);
     }
 
 }
