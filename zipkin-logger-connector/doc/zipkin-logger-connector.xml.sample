@@ -1,0 +1,6 @@
+<!-- BEGIN_INCLUDE(zipkin-logger:greet) -->
+    <zipkin-logger:greet config-ref="" friend="#[map-payload:friend]" />
+<!-- END_INCLUDE(zipkin-logger:greet) -->
+<!-- BEGIN_INCLUDE(zipkin-logger:add-entity) -->
+    <zipkin-logger:add-entity config-ref="" key="id1"/>
+<!-- END_INCLUDE(zipkin-logger:add-entity) -->
