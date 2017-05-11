@@ -46,6 +46,10 @@ import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
 import zipkin.reporter.okhttp3.OkHttpSender;
 
+/**
+ * @author michaelhyatt
+ *
+ */
 @Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger")
 @OnException(handler = ErrorHandler.class)
 public class ZipkinLoggerConnector {
@@ -95,15 +99,34 @@ public class ZipkinLoggerConnector {
 		reporter.close();
 	}
 
-	// TODO describe params
+	/**
+	 * Creates new span that can be a standalone span, or part of a parent span
+	 * coming with the request
+	 * 
+	 * @param muleEvent
+	 *            injected at runtime
+	 * @param standaloneOrJoinedSpan
+	 *            New standalone span, or join another parent span
+	 * @param spanTags
+	 *            collection of tags and parent information passed in the
+	 *            payload
+	 * @param spanType
+	 *            SERVER or CLIENT type of request
+	 * @param spanName
+	 *            Name of the span
+	 * @param flowVariableToSetWithId
+	 *            flow variable to populate with spanId
+	 * 
+	 * @return created span object
+	 */
 	@Processor
 	public brave.Span createAndStartSpan(MuleEvent muleEvent,
-			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.INPUT) String spanCreationType,
+			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.INPUT) String standaloneOrJoinedSpan,
 			@Default("#[payload]") Object spanTags, @Default(value = "SERVER") Kind spanType,
 			@Default(value = "myspan") String spanName, @Default(value = "spanId") String flowVariableToSetWithId) {
 
 		// Check if the context is propagated from incoming call
-		brave.Span span = createOrJoinSpan(spanTags, spanCreationType);
+		brave.Span span = createOrJoinSpan(spanTags, standaloneOrJoinedSpan);
 
 		span.name(spanName).kind(spanType);
 
@@ -125,10 +148,13 @@ public class ZipkinLoggerConnector {
 		return span;
 	}
 
-	/*
-	 * Finish span. Look up in from the inflight spans by spanId.
+	/**
+	 * Closes the existing span and causes it to be logged. Requires span
+	 * creation prior to calling.
 	 * 
-	 * @param spanId Span Id to finish.
+	 * @param spanIdExpr
+	 *            MEL expression to result in spanId.
+	 * @return
 	 */
 	@Processor
 	public brave.Span finishSpan(@Default(value = "#[flowVars.spanId]") String spanIdExpr) {
