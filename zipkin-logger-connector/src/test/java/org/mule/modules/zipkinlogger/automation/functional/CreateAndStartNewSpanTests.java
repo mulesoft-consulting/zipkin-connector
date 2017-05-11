@@ -11,7 +11,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mule.api.MuleContext;
 import org.mule.modules.zipkinlogger.ZipkinLoggerConnector;
+import org.mule.modules.zipkinlogger.model.HierarchicalLoggerTags;
 import org.mule.modules.zipkinlogger.model.LoggerTags;
+import org.mule.modules.zipkinlogger.model.ParentInfo;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
 import brave.Span.Kind;
@@ -61,6 +63,32 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 
 		// No parentId
 		assertNull(span.context().parentId());
+
+		// Found in subsequent call and is the same as the original one
+		assertNotNull(result);
+		assertSame(span, result);
+
+		// If not found, returns null
+		brave.Span resultNull = getConnector().finishSpan("9999L");
+		assertNull(resultNull);
+
+	}
+
+	@Test
+	public void testSpanWithParent() {
+
+		HierarchicalLoggerTags tags = new HierarchicalLoggerTags();
+		tags.addTag("test1", "value123");
+		tags.addTag("test2", "value789");
+
+		tags.setParentInfo(new ParentInfo("be3c95060bc041d5", "f396f0aa5492fbe1", "2b29459eb5dfc892"));
+
+		brave.Span span = getConnector().createAndStartSpan(null, "join_id", tags, Kind.SERVER, "myspan", "test");
+		Long spanId = span.context().spanId();
+		brave.Span result = getConnector().finishSpan(spanId.toString());
+
+		// There is a parentId
+		assertNotNull(span.context().parentId());
 
 		// Found in subsequent call and is the same as the original one
 		assertNotNull(result);

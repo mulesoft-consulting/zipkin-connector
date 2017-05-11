@@ -98,17 +98,17 @@ public class ZipkinLoggerConnector {
 	// TODO describe params
 	@Processor
 	public brave.Span createAndStartSpan(MuleEvent muleEvent,
-			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.INPUT) String spanCreationType, @Default("#[payload]") Object spanCreationData,
-			@Default(value = "SERVER") Kind spanType, @Default(value = "myspan") String spanName,
-			@Default(value = "spanId") String flowVariableToSetWithId) {
-		
+			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.INPUT) String spanCreationType,
+			@Default("#[payload]") Object spanTags, @Default(value = "SERVER") Kind spanType,
+			@Default(value = "myspan") String spanName, @Default(value = "spanId") String flowVariableToSetWithId) {
+
 		// Check if the context is propagated from incoming call
-		brave.Span span = createOrJoinSpan(spanCreationData, spanCreationType);
+		brave.Span span = createOrJoinSpan(spanTags, spanCreationType);
 
 		span.name(spanName).kind(spanType);
 
 		// Get the tags
-		extractTags(muleEvent, span);
+		extractTags((LoggerTags) spanTags, span);
 
 		span.remoteEndpoint(Endpoint.builder().serviceName(config.getServiceName()).build());
 
@@ -147,16 +147,16 @@ public class ZipkinLoggerConnector {
 	}
 
 	/**
-	 * @param muleEvent
+	 * @param spanTags
 	 * @param span
 	 */
-	private void extractTags(MuleEvent muleEvent, brave.Span span) {
+	private void extractTags(LoggerTags spanTags, brave.Span span) {
 
 		try {
-			LoggerTags tags = (LoggerTags) muleEvent.getMessage().getPayload();
+			List<BinaryAnnotation> tags = spanTags.getBinaryAnnotations();
 
 			// Add tags to span
-			for (BinaryAnnotation tag : tags.getBinaryAnnotations()) {
+			for (BinaryAnnotation tag : tags) {
 				span.tag(tag.getKey(), tag.getValue());
 			}
 		} catch (ClassCastException e) {
@@ -171,10 +171,10 @@ public class ZipkinLoggerConnector {
 	 * @return
 	 */
 	private brave.Span createOrJoinSpan(Object spanCreationData, String spanCreationType) {
-		
+
 		if ("standalone_id".equals(spanCreationType)) {
 			LoggerTags tagData = (LoggerTags) spanCreationData;
-			
+
 			Extractor<LoggerTags> extractor = tracing.propagation().extractor(new Getter<LoggerTags, String>() {
 				@Override
 				public String get(LoggerTags message, String key) {
@@ -182,9 +182,9 @@ public class ZipkinLoggerConnector {
 					return null;
 				}
 			});
-			
+
 			TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
-			
+
 			if (contextOrFlags.context() != null) {
 				logger.error("Found parent tags, joining spans instead");
 				return tracer.joinSpan(contextOrFlags.context());
@@ -194,27 +194,30 @@ public class ZipkinLoggerConnector {
 			}
 		} else if ("join_id".equals(spanCreationType)) {
 			HierarchicalLoggerTags tagData = (HierarchicalLoggerTags) spanCreationData;
-			
-			Extractor<HierarchicalLoggerTags> extractor = tracing.propagation().extractor(new Getter<HierarchicalLoggerTags, String>() {
-				@Override
-				public String get(HierarchicalLoggerTags message, String key) {
-					if ("X-B3-TraceId".equals(key)) {
-						return message.getParentInfo().getTraceId();
-					} else if ("X-B3-ParentSpanId".equals(key)) {
-						return message.getParentInfo().getParentSpanId();
-					} else if ("X-B3-SpanId".equals(key)) {
-						return message.getParentInfo().getSpanId();
-					} else if ("X-B3-Sampled".equals(key)) {
-						return message.getParentInfo().getSampled();
-					}
-					
-					return null;
-					
-				}
-			});
-			
+
+			Extractor<HierarchicalLoggerTags> extractor = tracing.propagation()
+					.extractor(new Getter<HierarchicalLoggerTags, String>() {
+						@Override
+						public String get(HierarchicalLoggerTags message, String key) {
+							if ("X-B3-TraceId".equals(key)) {
+								return message.getParentInfo().getTraceId();
+							} else if ("X-B3-ParentSpanId".equals(key)) {
+								return message.getParentInfo().getParentSpanId();
+							} else if ("X-B3-SpanId".equals(key)) {
+								return message.getParentInfo().getSpanId();
+							} else if ("X-B3-Sampled".equals(key)) {
+								return message.getParentInfo().getSampled();
+							} else if ("X-B3-Debug".equals(key)) {
+								return message.getParentInfo().getDebug();
+							}
+
+							return null;
+
+						}
+					});
+
 			TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
-			
+
 			if (contextOrFlags.context() != null) {
 				logger.debug("Found parent tags, joining");
 				return tracer.joinSpan(contextOrFlags.context());
@@ -223,8 +226,8 @@ public class ZipkinLoggerConnector {
 				return tracer.newTrace(contextOrFlags.samplingFlags());
 			}
 		}
-		
-		return null;		
+
+		return null;
 	}
 
 	/**
@@ -267,8 +270,8 @@ public class ZipkinLoggerConnector {
 	public List<MetaDataKey> getKeys() throws Exception {
 		List<MetaDataKey> keys = new ArrayList<MetaDataKey>();
 
-		keys.add(new DefaultMetaDataKey("standalone_id", "Standalone Span"));
 		keys.add(new DefaultMetaDataKey("join_id", "Join Parent Span"));
+		keys.add(new DefaultMetaDataKey("standalone_id", "Standalone Span"));
 		return keys;
 	}
 

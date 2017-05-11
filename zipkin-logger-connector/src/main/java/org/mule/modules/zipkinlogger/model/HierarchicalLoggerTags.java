@@ -11,6 +11,9 @@ public class HierarchicalLoggerTags extends LoggerTags {
 		parentInfo = parentSpanInfo;
 	}
 
+	public HierarchicalLoggerTags() {
+	}
+
 	public ParentInfo getParentInfo() {
 		return parentInfo;
 	}

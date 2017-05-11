@@ -2,6 +2,12 @@ package org.mule.modules.zipkinlogger.model;
 
 public class ParentInfo {
 
+	private String traceId;
+	private String parentSpanId;
+	private String spanId;
+	private String sampled;
+	private String debug;
+
 	public ParentInfo(String traceId, String parentSpanId, String spanId, String sampled) {
 		this.traceId = traceId;
 		this.parentSpanId = parentSpanId;
@@ -9,11 +15,13 @@ public class ParentInfo {
 		this.sampled = sampled;
 	}
 
-	private String traceId;
-	private String parentSpanId;
-	private String spanId;
-	private String sampled;
-
+	public ParentInfo(String traceId, String parentSpanId, String spanId) {
+		this.traceId = traceId;
+		this.parentSpanId = parentSpanId;
+		this.spanId = spanId;
+		this.sampled = null;
+	}
+	
 	public String getTraceId() {
 		return traceId;
 	}
@@ -44,6 +52,14 @@ public class ParentInfo {
 
 	public void setSampled(String sampled) {
 		this.sampled = sampled;
+	}
+
+	public String getDebug() {
+		return debug;
+	}
+
+	public void setDebug(String debug) {
+		this.debug = debug;
 	}
 
 }
