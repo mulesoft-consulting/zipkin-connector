@@ -26,12 +26,12 @@ import org.mule.common.metadata.MetaData;
 import org.mule.common.metadata.MetaDataKey;
 import org.mule.common.metadata.MetaDataModel;
 import org.mule.common.metadata.builder.DefaultMetaDataBuilder;
-import org.mule.extension.annotations.param.Ignore;
-import org.mule.modules.zipkinlogger.config.ConnectorConfig;
+import org.mule.modules.zipkinlogger.config.AbstractConfig;
+import org.mule.modules.zipkinlogger.config.ZipkinConsoleConnectorConfig;
+import org.mule.modules.zipkinlogger.config.ZipkinHttpConnectorConfig;
 import org.mule.modules.zipkinlogger.error.ErrorHandler;
-import org.mule.modules.zipkinlogger.model.BinaryAnnotation;
-import org.mule.modules.zipkinlogger.model.HierarchicalLoggerTags;
-import org.mule.modules.zipkinlogger.model.LoggerTags;
+import org.mule.modules.zipkinlogger.model.LoggerData;
+import org.mule.modules.zipkinlogger.model.LoggerTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +44,7 @@ import brave.propagation.TraceContextOrSamplingFlags;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
+import zipkin.reporter.Reporter;
 import zipkin.reporter.okhttp3.OkHttpSender;
 
 /**
@@ -55,16 +56,18 @@ import zipkin.reporter.okhttp3.OkHttpSender;
 public class ZipkinLoggerConnector {
 
 	@Config
-	ConnectorConfig config;
+	AbstractConfig config;
 
 	@Inject
 	MuleContext muleContext;
 
 	private Tracing tracing;
-	private AsyncReporter<Span> reporter;
+	private AsyncReporter<Span> reporter = null;
 
 	private Tracer tracer;
-	private Map<Long, brave.Span> spansInFlight = new HashMap<Long, brave.Span>();;
+	private Map<Long, brave.Span> spansInFlight = new HashMap<Long, brave.Span>();
+
+	private String serviceName;
 
 	private static Logger logger = LoggerFactory.getLogger(ZipkinLoggerConnector.class);
 
@@ -73,18 +76,33 @@ public class ZipkinLoggerConnector {
 	 */
 	@Start
 	public void init() {
-		// Configure a reporter, which controls how often spans are sent
-		// (the dependency is io.zipkin.reporter:zipkin-sender-okhttp3)
-		OkHttpSender sender = OkHttpSender.create(config.getZipkinUrl());
-		reporter = AsyncReporter.builder(sender).build();
+		if (config instanceof ZipkinHttpConnectorConfig) {
 
-		// Create a tracing component with the service name you want to see in
-		// Zipkin.
-		tracing = Tracing.newBuilder().localServiceName(config.getServiceName()).reporter(reporter).build();
+			ZipkinHttpConnectorConfig httpConfig = (ZipkinHttpConnectorConfig) config;
+			// Configure a reporter, which controls how often spans are sent
+			// (the dependency is io.zipkin.reporter:zipkin-sender-okhttp3)
+			OkHttpSender sender = OkHttpSender.create(httpConfig.getZipkinUrl());
+			reporter = (AsyncReporter<Span>) AsyncReporter.builder(sender).build();
 
-		// Tracing exposes objects you might need, most importantly the tracer
+			// Create a tracing component with the service name you want to see
+			// in Zipkin.
+			tracing = Tracing.newBuilder().localServiceName(httpConfig.getServiceName()).reporter(reporter).build();
+
+			serviceName = httpConfig.getServiceName();
+		} else if (config instanceof ZipkinConsoleConnectorConfig) {
+			Reporter<Span> reporter = Reporter.CONSOLE;
+
+			ZipkinConsoleConnectorConfig consoleConfig = (ZipkinConsoleConnectorConfig) config;
+			tracing = Tracing.newBuilder().localServiceName(consoleConfig.getServiceName()).reporter(reporter).build();
+
+			serviceName = consoleConfig.getServiceName();
+		} else {
+			throw new RuntimeException("Unknown configuration option");
+		}
+
+		// Tracing exposes objects you might need, most importantly the
+		// tracer
 		tracer = tracing.tracer();
-
 	}
 
 	/*
@@ -96,7 +114,9 @@ public class ZipkinLoggerConnector {
 		// reporter
 		// This might be a shutdown hook for some users
 		tracing.close();
-		reporter.close();
+
+		if (reporter != null)
+			reporter.close();
 	}
 
 	/**
@@ -131,9 +151,9 @@ public class ZipkinLoggerConnector {
 		span.name(spanName).kind(spanType);
 
 		// Get the tags
-		extractTags((LoggerTags) spanTags, span);
+		extractTags((LoggerData) spanTags, span);
 
-		span.remoteEndpoint(Endpoint.builder().serviceName(config.getServiceName()).build());
+		span.remoteEndpoint(Endpoint.builder().serviceName(serviceName).build());
 
 		span.start();
 
@@ -176,13 +196,13 @@ public class ZipkinLoggerConnector {
 	 * @param spanTags
 	 * @param span
 	 */
-	private void extractTags(LoggerTags spanTags, brave.Span span) {
+	private void extractTags(LoggerData spanTags, brave.Span span) {
 
 		try {
-			List<BinaryAnnotation> tags = spanTags.getBinaryAnnotations();
+			List<LoggerTag> tags = spanTags.getLoggerTags();
 
 			// Add tags to span
-			for (BinaryAnnotation tag : tags) {
+			for (LoggerTag tag : tags) {
 				span.tag(tag.getKey(), tag.getValue());
 			}
 		} catch (ClassCastException e) {
@@ -199,11 +219,11 @@ public class ZipkinLoggerConnector {
 	private brave.Span createOrJoinSpan(Object spanCreationData, String spanCreationType) {
 
 		if ("standalone_id".equals(spanCreationType)) {
-			LoggerTags tagData = (LoggerTags) spanCreationData;
+			LoggerData tagData = (LoggerData) spanCreationData;
 
-			Extractor<LoggerTags> extractor = tracing.propagation().extractor(new Getter<LoggerTags, String>() {
+			Extractor<LoggerData> extractor = tracing.propagation().extractor(new Getter<LoggerData, String>() {
 				@Override
-				public String get(LoggerTags message, String key) {
+				public String get(LoggerData message, String key) {
 					// Don't propagate parent tags
 					return null;
 				}
@@ -219,28 +239,27 @@ public class ZipkinLoggerConnector {
 				return tracer.newTrace(contextOrFlags.samplingFlags());
 			}
 		} else if ("join_id".equals(spanCreationType)) {
-			HierarchicalLoggerTags tagData = (HierarchicalLoggerTags) spanCreationData;
+			LoggerData tagData = (LoggerData) spanCreationData;
 
-			Extractor<HierarchicalLoggerTags> extractor = tracing.propagation()
-					.extractor(new Getter<HierarchicalLoggerTags, String>() {
-						@Override
-						public String get(HierarchicalLoggerTags message, String key) {
-							if ("X-B3-TraceId".equals(key)) {
-								return message.getParentInfo().getTraceId();
-							} else if ("X-B3-ParentSpanId".equals(key)) {
-								return message.getParentInfo().getParentSpanId();
-							} else if ("X-B3-SpanId".equals(key)) {
-								return message.getParentInfo().getSpanId();
-							} else if ("X-B3-Sampled".equals(key)) {
-								return message.getParentInfo().getSampled();
-							} else if ("X-B3-Debug".equals(key)) {
-								return message.getParentInfo().getDebug();
-							}
+			Extractor<LoggerData> extractor = tracing.propagation().extractor(new Getter<LoggerData, String>() {
+				@Override
+				public String get(LoggerData message, String key) {
+					if ("X-B3-TraceId".equals(key)) {
+						return message.getTraceData().getTraceId();
+					} else if ("X-B3-ParentSpanId".equals(key)) {
+						return message.getTraceData().getParentSpanId();
+					} else if ("X-B3-SpanId".equals(key)) {
+						return message.getTraceData().getSpanId();
+					} else if ("X-B3-Sampled".equals(key)) {
+						return message.getTraceData().getSampled();
+					} else if ("X-B3-Debug".equals(key)) {
+						return message.getTraceData().getDebug();
+					}
 
-							return null;
+					return null;
 
-						}
-					});
+				}
+			});
 
 			TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
 
@@ -256,39 +275,15 @@ public class ZipkinLoggerConnector {
 		return null;
 	}
 
-	/**
-	 * DataSense processor
-	 * 
-	 * @param key
-	 *            Key to be used to populate the entity
-	 * @param entity
-	 *            Map that represents the entity
-	 * @return Some string
-	 */
-	@Processor
-	public Map<String, Object> addEntity(@MetaDataKeyParam String key,
-			@Default("#[payload]") Map<String, Object> entity) {
-		/*
-		 * USE THE KEY AND THE MAP TO DO SOMETHING
-		 */
-		return entity;
-	}
-
-	public void setConfig(ConnectorConfig config) {
+	public void setConfig(AbstractConfig config) {
 		this.config = config;
-	}
-
-	@Processor
-	@Ignore
-	public void setTracer(Tracer tracer) {
-		this.tracer = tracer;
 	}
 
 	public void setMuleContext(MuleContext muleContext) {
 		this.muleContext = muleContext;
 	}
 
-	public ConnectorConfig getConfig() {
+	public AbstractConfig getConfig() {
 		return config;
 	}
 
@@ -303,17 +298,8 @@ public class ZipkinLoggerConnector {
 
 	@MetaDataRetriever
 	public MetaData getPayloadModel(MetaDataKey entityKey) throws Exception {
-
-		if ("standalone_id".equals(entityKey.getId())) {
-			MetaDataModel standaloneModel = new DefaultMetaDataBuilder().createPojo(LoggerTags.class).build();
-			return new DefaultMetaData(standaloneModel);
-		} else if ("join_id".equals(entityKey.getId())) {
-			MetaDataModel joinModel = new DefaultMetaDataBuilder().createPojo(HierarchicalLoggerTags.class).build();
-			return new DefaultMetaData(joinModel);
-		} else {
-			throw new RuntimeException(String.format("This entity %s is not supported", entityKey.getId()));
-		}
-
+		MetaDataModel standaloneModel = new DefaultMetaDataBuilder().createPojo(LoggerData.class).build();
+		return new DefaultMetaData(standaloneModel);
 	}
 
 }

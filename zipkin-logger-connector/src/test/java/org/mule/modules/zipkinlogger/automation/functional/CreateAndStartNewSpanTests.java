@@ -4,58 +4,43 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
-import javax.inject.Inject;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mule.api.MuleContext;
+import org.mule.api.annotations.Config;
 import org.mule.modules.zipkinlogger.ZipkinLoggerConnector;
-import org.mule.modules.zipkinlogger.model.HierarchicalLoggerTags;
-import org.mule.modules.zipkinlogger.model.LoggerTags;
-import org.mule.modules.zipkinlogger.model.ParentInfo;
+import org.mule.modules.zipkinlogger.config.ZipkinConsoleConnectorConfig;
+import org.mule.modules.zipkinlogger.model.LoggerData;
+import org.mule.modules.zipkinlogger.model.LoggerTag;
+import org.mule.modules.zipkinlogger.model.TraceData;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
 import brave.Span.Kind;
-import brave.Tracer;
-import brave.Tracing;
-import zipkin.Span;
-import zipkin.reporter.Reporter;
 
 public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerConnector> {
-
-	private Tracing tracing;
-
-	@Inject
-	MuleContext muleContext;
-
+	
+	@Config ZipkinConsoleConnectorConfig config;
+	
 	public CreateAndStartNewSpanTests() {
 		super(ZipkinLoggerConnector.class);
 	}
 
 	@Before
 	public void setup() {
-		Reporter<Span> reporter = Reporter.CONSOLE;
-
-		tracing = Tracing.newBuilder().localServiceName("my-service").reporter(reporter).build();
-
-		Tracer tracer = tracing.tracer();
-
-		getConnector().setTracer(tracer);
 
 	}
 
 	@After
 	public void tearDown() {
-		tracing.close();
+
 	}
 
 	@Test
 	public void testStandaloneSpan() {
 
-		LoggerTags tags = new LoggerTags();
-		tags.addTag("test1", "value123");
-		tags.addTag("test2", "value789");
+		LoggerData tags = new LoggerData();
+		tags.getLoggerTags().add(new LoggerTag("test1", "value123"));
+		tags.getLoggerTags().add(new LoggerTag("test2", "value789"));
 
 		brave.Span span = getConnector().createAndStartSpan(null, "standalone_id", tags, Kind.SERVER, "myspan", "test");
 		Long spanId = span.context().spanId();
@@ -77,11 +62,11 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 	@Test
 	public void testSpanWithParent() {
 
-		HierarchicalLoggerTags tags = new HierarchicalLoggerTags();
-		tags.addTag("test1", "value123");
-		tags.addTag("test2", "value789");
+		LoggerData tags = new LoggerData();
+		tags.getLoggerTags().add(new LoggerTag("test1", "value123"));
+		tags.getLoggerTags().add(new LoggerTag("test2", "value789"));
 
-		tags.setParentInfo(new ParentInfo("be3c95060bc041d5", "f396f0aa5492fbe1", "2b29459eb5dfc892"));
+		tags.setTraceData(new TraceData("be3c95060bc041d5", "f396f0aa5492fbe1", "2b29459eb5dfc892", null, null));
 
 		brave.Span span = getConnector().createAndStartSpan(null, "join_id", tags, Kind.SERVER, "myspan", "test");
 		Long spanId = span.context().spanId();
