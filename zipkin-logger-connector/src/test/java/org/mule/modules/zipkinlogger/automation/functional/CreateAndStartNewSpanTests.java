@@ -2,7 +2,7 @@ package org.mule.modules.zipkinlogger.automation.functional;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import org.junit.After;
 import org.junit.Before;
@@ -18,9 +18,10 @@ import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 import brave.Span.Kind;
 
 public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerConnector> {
-	
-	@Config ZipkinConsoleConnectorConfig config;
-	
+
+	@Config
+	ZipkinConsoleConnectorConfig config;
+
 	public CreateAndStartNewSpanTests() {
 		super(ZipkinLoggerConnector.class);
 	}
@@ -42,20 +43,25 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		tags.getLoggerTags().add(new LoggerTag("test1", "value123"));
 		tags.getLoggerTags().add(new LoggerTag("test2", "value789"));
 
-		brave.Span span = getConnector().createAndStartSpan(null, "standalone_id", tags, Kind.SERVER, "myspan", "test");
-		Long spanId = span.context().spanId();
-		brave.Span result = getConnector().finishSpan(spanId.toString());
+		TraceData trace = getConnector().createAndStartSpan(null, "standalone_id", tags, Kind.SERVER, "myspan", "test");
+		Long spanId = Long.valueOf(trace.getSpanId());
+
+		try {
+			getConnector().finishSpan(spanId.toString());
+		} catch (RuntimeException e) {
+			fail("Exception thrown");
+		}
 
 		// No parentId
-		assertNull(span.context().parentId());
-
-		// Found in subsequent call and is the same as the original one
-		assertNotNull(result);
-		assertSame(span, result);
+		assertNull(trace.getParentSpanId());
 
 		// If not found, returns null
-		brave.Span resultNull = getConnector().finishSpan("9999L");
-		assertNull(resultNull);
+		try {
+			getConnector().finishSpan("9999L");
+			fail("Exception not thrown");
+		} catch (RuntimeException e) {
+
+		}
 
 	}
 
@@ -68,21 +74,25 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 
 		tags.setTraceData(new TraceData("be3c95060bc041d5", "f396f0aa5492fbe1", "2b29459eb5dfc892", null, null));
 
-		brave.Span span = getConnector().createAndStartSpan(null, "join_id", tags, Kind.SERVER, "myspan", "test");
-		Long spanId = span.context().spanId();
-		brave.Span result = getConnector().finishSpan(spanId.toString());
+		TraceData trace = getConnector().createAndStartSpan(null, "join_id", tags, Kind.SERVER, "myspan", "test");
+		Long spanId = Long.valueOf(trace.getSpanId());
+
+		try {
+			getConnector().finishSpan(spanId.toString());
+		} catch (RuntimeException e) {
+			fail("Exception thrown");
+		}
 
 		// There is a parentId
-		assertNotNull(span.context().parentId());
-
-		// Found in subsequent call and is the same as the original one
-		assertNotNull(result);
-		assertSame(span, result);
+		assertNotNull(trace.getParentSpanId());
 
 		// If not found, returns null
-		brave.Span resultNull = getConnector().finishSpan("9999L");
-		assertNull(resultNull);
+		try {
+			getConnector().finishSpan("9999L");
+			fail("Exception not thrown");
+		} catch (RuntimeException e) {
 
+		}
 	}
 
 }

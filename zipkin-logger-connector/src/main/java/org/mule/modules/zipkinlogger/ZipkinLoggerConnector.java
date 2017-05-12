@@ -1,6 +1,5 @@
 package org.mule.modules.zipkinlogger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +10,7 @@ import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
-import org.mule.api.annotations.MetaDataKeyRetriever;
-import org.mule.api.annotations.MetaDataRetriever;
+import org.mule.api.annotations.MetaDataScope;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.lifecycle.OnException;
 import org.mule.api.annotations.lifecycle.Start;
@@ -20,18 +18,14 @@ import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.MetaDataKeyParam;
 import org.mule.api.annotations.param.MetaDataKeyParamAffectsType;
-import org.mule.common.metadata.DefaultMetaData;
-import org.mule.common.metadata.DefaultMetaDataKey;
-import org.mule.common.metadata.MetaData;
-import org.mule.common.metadata.MetaDataKey;
-import org.mule.common.metadata.MetaDataModel;
-import org.mule.common.metadata.builder.DefaultMetaDataBuilder;
 import org.mule.modules.zipkinlogger.config.AbstractConfig;
 import org.mule.modules.zipkinlogger.config.ZipkinConsoleConnectorConfig;
 import org.mule.modules.zipkinlogger.config.ZipkinHttpConnectorConfig;
+import org.mule.modules.zipkinlogger.datasense.DefaultCategory;
 import org.mule.modules.zipkinlogger.error.ErrorHandler;
 import org.mule.modules.zipkinlogger.model.LoggerData;
 import org.mule.modules.zipkinlogger.model.LoggerTag;
+import org.mule.modules.zipkinlogger.model.TraceData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +46,7 @@ import zipkin.reporter.okhttp3.OkHttpSender;
  *
  */
 @Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger")
+@MetaDataScope(DefaultCategory.class)
 @OnException(handler = ErrorHandler.class)
 public class ZipkinLoggerConnector {
 
@@ -140,8 +135,8 @@ public class ZipkinLoggerConnector {
 	 * @return created span object
 	 */
 	@Processor
-	public brave.Span createAndStartSpan(MuleEvent muleEvent,
-			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.INPUT) String standaloneOrJoinedSpan,
+	public TraceData createAndStartSpan(MuleEvent muleEvent,
+			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.BOTH) String standaloneOrJoinedSpan,
 			@Default("#[payload]") Object spanTags, @Default(value = "SERVER") Kind spanType,
 			@Default(value = "myspan") String spanName, @Default(value = "spanId") String flowVariableToSetWithId) {
 
@@ -165,7 +160,9 @@ public class ZipkinLoggerConnector {
 		// Store span for future lookup
 		spansInFlight.put(spanId, span);
 
-		return span;
+		return new TraceData(span.context().traceIdString(), Long.toString(span.context().spanId()),
+				span.context().parentId() != null ? Long.toString(span.context().parentId()) : null,
+				Boolean.toString(span.context().sampled()), Boolean.toString(span.context().debug()));
 	}
 
 	/**
@@ -177,7 +174,7 @@ public class ZipkinLoggerConnector {
 	 * @return
 	 */
 	@Processor
-	public brave.Span finishSpan(@Default(value = "#[flowVars.spanId]") String spanIdExpr) {
+	public void finishSpan(@Default(value = "#[flowVars.spanId]") String spanIdExpr) {
 
 		Long spanId = (long) muleContext.getExpressionLanguage().evaluate(spanIdExpr);
 
@@ -186,10 +183,9 @@ public class ZipkinLoggerConnector {
 		if (span != null) {
 			span.finish();
 		} else {
-			logger.warn("Span " + spanId + " not found");
+			throw new RuntimeException("Span " + spanId + " not found");
 		}
 
-		return span;
 	}
 
 	/**
@@ -285,21 +281,6 @@ public class ZipkinLoggerConnector {
 
 	public AbstractConfig getConfig() {
 		return config;
-	}
-
-	@MetaDataKeyRetriever
-	public List<MetaDataKey> getKeys() throws Exception {
-		List<MetaDataKey> keys = new ArrayList<MetaDataKey>();
-
-		keys.add(new DefaultMetaDataKey("join_id", "Join Parent Span"));
-		keys.add(new DefaultMetaDataKey("standalone_id", "Standalone Span"));
-		return keys;
-	}
-
-	@MetaDataRetriever
-	public MetaData getPayloadModel(MetaDataKey entityKey) throws Exception {
-		MetaDataModel standaloneModel = new DefaultMetaDataBuilder().createPojo(LoggerData.class).build();
-		return new DefaultMetaData(standaloneModel);
 	}
 
 }
