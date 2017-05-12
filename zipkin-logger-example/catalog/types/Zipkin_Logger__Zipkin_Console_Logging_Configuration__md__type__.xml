@@ -1,0 +1,32 @@
+<metadata__catalog__entry>
+  <version>5.2.0.0</version>
+  <types class="tree-map">
+    <entry>
+      <org.mule.common.metadata.DefaultMetaDataKey>
+        <id>join_id</id>
+        <displayName>Join Parent Span</displayName>
+        <category>DefaultCategory</category>
+        <metaDataKeyPropertiesManager>
+          <properties>
+            <org.mule.common.metadata.key.property.dsql.DsqlFromMetaDataKeyProperty/>
+          </properties>
+        </metaDataKeyPropertiesManager>
+      </org.mule.common.metadata.DefaultMetaDataKey>
+      <null/>
+    </entry>
+    <entry>
+      <org.mule.common.metadata.DefaultMetaDataKey>
+        <id>standalone_id</id>
+        <displayName>Standalone Span</displayName>
+        <category>DefaultCategory</category>
+        <metaDataKeyPropertiesManager>
+          <properties>
+            <org.mule.common.metadata.key.property.dsql.DsqlFromMetaDataKeyProperty/>
+          </properties>
+        </metaDataKeyPropertiesManager>
+      </org.mule.common.metadata.DefaultMetaDataKey>
+      <null/>
+    </entry>
+  </types>
+  <connectorName>Zipkin_Logger__Zipkin_Console_Logging_Configuration</connectorName>
+</metadata__catalog__entry>

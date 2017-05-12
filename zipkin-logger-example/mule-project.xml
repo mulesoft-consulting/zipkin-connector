@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mule-project xmlns="http://www.mulesoft.com/tooling/project" runtimeId="org.mule.tooling.server.3.8.4.ee" schemaVersion="5.3.0.0">
+    <name>zipkin-logger-example</name>
+    <description></description>
+    <muleExtension name="Zipkin Logger" qualifier="org.mule.tooling.ui.contribution.zipkin-logger.3.5.0"/>
+</mule-project>
