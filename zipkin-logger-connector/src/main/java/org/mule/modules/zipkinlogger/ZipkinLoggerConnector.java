@@ -141,7 +141,7 @@ public class ZipkinLoggerConnector {
 			@Default(value = "myspan") String spanName, @Default(value = "spanId") String flowVariableToSetWithId) {
 
 		// Check if the context is propagated from incoming call
-		brave.Span span = createOrJoinSpan(spanTags, standaloneOrJoinedSpan);
+		brave.Span span = createOrJoinSpan((LoggerData) spanTags, standaloneOrJoinedSpan);
 
 		span.name(spanName).kind(spanType);
 
@@ -160,9 +160,12 @@ public class ZipkinLoggerConnector {
 		// Store span for future lookup
 		spansInFlight.put(spanId, span);
 
-		return new TraceData(span.context().traceIdString(), Long.toString(span.context().spanId()),
+		TraceData traceDataToReturn = new TraceData(span.context().traceIdString(),
+				Long.toString(span.context().spanId()),
 				span.context().parentId() != null ? Long.toString(span.context().parentId()) : null,
 				Boolean.toString(span.context().sampled()), Boolean.toString(span.context().debug()));
+
+		return traceDataToReturn;
 	}
 
 	/**
@@ -194,16 +197,11 @@ public class ZipkinLoggerConnector {
 	 */
 	private void extractTags(LoggerData spanTags, brave.Span span) {
 
-		try {
-			List<LoggerTag> tags = spanTags.getLoggerTags();
+		List<LoggerTag> tags = spanTags.getLoggerTags();
 
-			// Add tags to span
-			for (LoggerTag tag : tags) {
-				span.tag(tag.getKey(), tag.getValue());
-			}
-		} catch (ClassCastException e) {
-			// Ignore cast error when LoggerTags is not defined in the payload
-			logger.debug("Message payload is not LoggerTags. Skipping tags creation.");
+		// Add tags to span
+		for (LoggerTag tag : tags) {
+			span.tag(tag.getKey(), tag.getValue());
 		}
 	}
 
@@ -212,34 +210,12 @@ public class ZipkinLoggerConnector {
 	 * @param spanCreationType
 	 * @return
 	 */
-	private brave.Span createOrJoinSpan(Object spanCreationData, String spanCreationType) {
+	private brave.Span createOrJoinSpan(LoggerData tagData, final String spanCreationType) {
 
-		if ("standalone_id".equals(spanCreationType)) {
-			LoggerData tagData = (LoggerData) spanCreationData;
-
-			Extractor<LoggerData> extractor = tracing.propagation().extractor(new Getter<LoggerData, String>() {
-				@Override
-				public String get(LoggerData message, String key) {
-					// Don't propagate parent tags
-					return null;
-				}
-			});
-
-			TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
-
-			if (contextOrFlags.context() != null) {
-				logger.error("Found parent tags, joining spans instead");
-				return tracer.joinSpan(contextOrFlags.context());
-			} else {
-				logger.debug("Starting new span");
-				return tracer.newTrace(contextOrFlags.samplingFlags());
-			}
-		} else if ("join_id".equals(spanCreationType)) {
-			LoggerData tagData = (LoggerData) spanCreationData;
-
-			Extractor<LoggerData> extractor = tracing.propagation().extractor(new Getter<LoggerData, String>() {
-				@Override
-				public String get(LoggerData message, String key) {
+		Extractor<LoggerData> extractor = tracing.propagation().extractor(new Getter<LoggerData, String>() {
+			@Override
+			public String get(LoggerData message, String key) {
+				if ("join_id".equals(spanCreationType)) {
 					if ("X-B3-TraceId".equals(key)) {
 						return message.getTraceData().getTraceId();
 					} else if ("X-B3-ParentSpanId".equals(key)) {
@@ -251,24 +227,22 @@ public class ZipkinLoggerConnector {
 					} else if ("X-B3-Debug".equals(key)) {
 						return message.getTraceData().getDebug();
 					}
-
-					return null;
-
 				}
-			});
+				return null;
 
-			TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
-
-			if (contextOrFlags.context() != null) {
-				logger.debug("Found parent tags, joining");
-				return tracer.joinSpan(contextOrFlags.context());
-			} else {
-				logger.error("Starting new span, propagation details not found.");
-				return tracer.newTrace(contextOrFlags.samplingFlags());
 			}
+		});
+
+		TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
+
+		if (contextOrFlags.context() != null) {
+			logger.debug("Found parent tags, joining");
+			return tracer.joinSpan(contextOrFlags.context());
+		} else {
+			logger.debug("Starting new span, propagation details not found.");
+			return tracer.newTrace(contextOrFlags.samplingFlags());
 		}
 
-		return null;
 	}
 
 	public void setConfig(AbstractConfig config) {
