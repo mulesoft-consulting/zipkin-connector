@@ -17,12 +17,11 @@ public class TraceData {
 	}
 
 	/**
-	 * 
-	 * @param spanId
 	 * @param traceId
+	 * @param spanId
+	 * @param parentSpanId
 	 * @param sampled
 	 * @param debug
-	 * @param parentSpanId
 	 */
 	public TraceData(String traceId, String spanId, String parentSpanId, String sampled, String debug) {
 		super();

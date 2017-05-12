@@ -46,6 +46,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 		debug: payload.debug,
 		parentSpanId: payload.spanId,
 		sampled: payload.sampled,
+		spanId: payload.spanId,
 		traceId: payload.traceId
 	}
 } as :object {

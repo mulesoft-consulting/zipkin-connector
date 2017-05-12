@@ -44,12 +44,12 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		tags.getLoggerTags().add(new LoggerTag("test2", "value789"));
 
 		TraceData trace = getConnector().createAndStartSpan(null, "standalone_id", tags, Kind.SERVER, "myspan", "test");
-		Long spanId = Long.valueOf(trace.getSpanId());
+		String spanId = trace.getSpanId();
 
 		try {
-			getConnector().finishSpan(spanId.toString());
+			getConnector().finishSpan('"' + spanId + '"');
 		} catch (RuntimeException e) {
-			fail("Exception thrown");
+			fail("Exception thrown while finishing the span. spanId search didn't work");
 		}
 
 		// No parentId
@@ -75,10 +75,10 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		tags.setTraceData(new TraceData("be3c95060bc041d5", "f396f0aa5492fbe1", "2b29459eb5dfc892", null, null));
 
 		TraceData trace = getConnector().createAndStartSpan(null, "join_id", tags, Kind.SERVER, "myspan", "test");
-		Long spanId = Long.valueOf(trace.getSpanId());
+		String spanId = trace.getSpanId();
 
 		try {
-			getConnector().finishSpan(spanId.toString());
+			getConnector().finishSpan('"' + spanId + '"');
 		} catch (RuntimeException e) {
 			fail("Exception thrown");
 		}

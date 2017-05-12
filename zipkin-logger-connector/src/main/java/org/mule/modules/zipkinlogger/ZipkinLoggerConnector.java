@@ -60,7 +60,7 @@ public class ZipkinLoggerConnector {
 	private AsyncReporter<Span> reporter = null;
 
 	private Tracer tracer;
-	private Map<Long, brave.Span> spansInFlight = new HashMap<Long, brave.Span>();
+	private Map<String, brave.Span> spansInFlight = new HashMap<String, brave.Span>();
 
 	private String serviceName;
 
@@ -152,7 +152,7 @@ public class ZipkinLoggerConnector {
 
 		span.start();
 
-		Long spanId = span.context().spanId();
+		String spanId = Long.toHexString(span.context().spanId());
 
 		// Set the flowVar with created spanId
 		muleEvent.setFlowVariable(flowVariableToSetWithId, spanId);
@@ -160,9 +160,9 @@ public class ZipkinLoggerConnector {
 		// Store span for future lookup
 		spansInFlight.put(spanId, span);
 
-		TraceData traceDataToReturn = new TraceData(span.context().traceIdString(),
-				Long.toString(span.context().spanId()),
-				span.context().parentId() != null ? Long.toString(span.context().parentId()) : null,
+		TraceData traceDataToReturn = new TraceData(Long.toHexString(span.context().traceId()),
+				Long.toHexString(span.context().spanId()),
+				span.context().parentId() != null ? Long.toHexString(span.context().parentId()) : null,
 				Boolean.toString(span.context().sampled()), Boolean.toString(span.context().debug()));
 
 		return traceDataToReturn;
@@ -179,7 +179,7 @@ public class ZipkinLoggerConnector {
 	@Processor
 	public void finishSpan(@Default(value = "#[flowVars.spanId]") String spanIdExpr) {
 
-		Long spanId = (long) muleContext.getExpressionLanguage().evaluate(spanIdExpr);
+		String spanId = (String) muleContext.getExpressionLanguage().evaluate(spanIdExpr);
 
 		brave.Span span = spansInFlight.remove(spanId);
 
