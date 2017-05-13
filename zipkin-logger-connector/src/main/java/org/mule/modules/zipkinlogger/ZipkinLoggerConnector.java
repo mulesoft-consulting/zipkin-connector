@@ -12,7 +12,6 @@ import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.MetaDataScope;
 import org.mule.api.annotations.Processor;
-import org.mule.api.annotations.lifecycle.OnException;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
@@ -22,7 +21,6 @@ import org.mule.modules.zipkinlogger.config.AbstractConfig;
 import org.mule.modules.zipkinlogger.config.ZipkinConsoleConnectorConfig;
 import org.mule.modules.zipkinlogger.config.ZipkinHttpConnectorConfig;
 import org.mule.modules.zipkinlogger.datasense.DefaultCategory;
-import org.mule.modules.zipkinlogger.error.ErrorHandler;
 import org.mule.modules.zipkinlogger.model.LoggerData;
 import org.mule.modules.zipkinlogger.model.LoggerTag;
 import org.mule.modules.zipkinlogger.model.TraceData;
@@ -47,7 +45,6 @@ import zipkin.reporter.okhttp3.OkHttpSender;
  */
 @Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger")
 @MetaDataScope(DefaultCategory.class)
-@OnException(handler = ErrorHandler.class)
 public class ZipkinLoggerConnector {
 
 	@Config
