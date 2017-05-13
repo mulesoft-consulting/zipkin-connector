@@ -28,7 +28,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 		value: "1st call from a client"
 	}]
 } as :object {
-	class : "org.mule.modules.zipkinlogger.model.LoggerData"
+	class : "com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData"
 }
 ]]></dw:set-payload>
         </dw:transform-message>
@@ -62,7 +62,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 		traceId: inboundProperties.'x-b3-traceid'
 	}
 } as :object {
-	class : "org.mule.modules.zipkinlogger.model.LoggerData"
+	class : "com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData"
 }]]></dw:set-payload>
         </dw:transform-message>
         <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" standaloneOrJoinedSpan="join_id" spanName="myspan2" doc:name="Zipkin Logger"/>
@@ -88,7 +88,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 		traceId: payload.traceId
 	}
 } as :object {
-	class : "org.mule.modules.zipkinlogger.model.LoggerData"
+	class : "com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData"
 }
 ]]></dw:set-payload>
         </dw:transform-message>

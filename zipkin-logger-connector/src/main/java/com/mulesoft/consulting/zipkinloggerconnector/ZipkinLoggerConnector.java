@@ -12,6 +12,7 @@ import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.MetaDataScope;
 import org.mule.api.annotations.Processor;
+import org.mule.api.annotations.display.FriendlyName;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
@@ -189,9 +190,8 @@ public class ZipkinLoggerConnector {
 	 * @return
 	 */
 	@Processor
-	public void finishSpan(@Default(value = "#[flowVars.spanId]") String spanIdExpr) {
-
-		String spanId = (String) muleContext.getExpressionLanguage().evaluate(spanIdExpr);
+	public void finishSpan(
+			@Default(value = "#[flowVars.spanId]") @FriendlyName("Expression to get spanId") String spanId) {
 
 		brave.Span span = spansInFlight.remove(spanId);
 

@@ -60,11 +60,6 @@
 			<attribute name="javadoc_location" value="jar:file:/Users/michaelhyatt/.m2/repository/com/squareup/okio/okio/1.12.0/okio-1.12.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="var" path="M2_REPO/org/mockito/mockito-all/1.10.19/mockito-all-1.10.19.jar" sourcepath="M2_REPO/org/mockito/mockito-all/1.10.19/mockito-all-1.10.19-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/Users/michaelhyatt/.m2/repository/org/mockito/mockito-all/1.10.19/mockito-all-1.10.19-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="var" path="M2_REPO/org/mule/mule-core/3.8.0/mule-core-3.8.0.jar" sourcepath="M2_REPO/org/mule/mule-core/3.8.0/mule-core-3.8.0-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file:/Users/michaelhyatt/.m2/repository/org/mule/mule-core/3.8.0/mule-core-3.8.0-javadoc.jar!/"/>
@@ -509,6 +504,11 @@
 	<classpathentry kind="var" path="M2_REPO/net/sf/jopt-simple/jopt-simple/4.6/jopt-simple-4.6.jar" sourcepath="M2_REPO/net/sf/jopt-simple/jopt-simple/4.6/jopt-simple-4.6-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file:/Users/michaelhyatt/.m2/repository/net/sf/jopt-simple/jopt-simple/4.6/jopt-simple-4.6-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/org/mockito/mockito-all/1.9.5/mockito-all-1.9.5.jar" sourcepath="M2_REPO/org/mockito/mockito-all/1.9.5/mockito-all-1.9.5-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/Users/michaelhyatt/.m2/repository/org/mockito/mockito-all/1.9.5/mockito-all-1.9.5-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="var" path="M2_REPO/org/mule/modules/mule-module-ws/3.8.0/mule-module-ws-3.8.0.jar" sourcepath="M2_REPO/org/mule/modules/mule-module-ws/3.8.0/mule-module-ws-3.8.0-sources.jar">

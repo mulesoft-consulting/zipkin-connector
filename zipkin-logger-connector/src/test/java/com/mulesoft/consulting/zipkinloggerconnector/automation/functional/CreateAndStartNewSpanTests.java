@@ -51,7 +51,7 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		String spanId = trace.getSpanId();
 
 		try {
-			getConnector().finishSpan('"' + spanId + '"');
+			getConnector().finishSpan(spanId);
 		} catch (RuntimeException e) {
 			fail("Exception thrown while finishing the span. spanId search didn't work");
 		}
@@ -85,7 +85,7 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		String spanId = trace.getSpanId();
 
 		try {
-			getConnector().finishSpan('"' + spanId + '"');
+			getConnector().finishSpan(spanId);
 		} catch (RuntimeException e) {
 			fail("Exception thrown");
 		}
@@ -118,7 +118,7 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		String spanId = trace.getSpanId();
 
 		try {
-			getConnector().finishSpan('"' + spanId + '"');
+			getConnector().finishSpan(spanId);
 		} catch (RuntimeException e) {
 			fail("Exception thrown");
 		}
