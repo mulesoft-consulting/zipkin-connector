@@ -1,4 +1,4 @@
-package org.mule.modules.zipkinlogger.automation.functional;
+package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -8,12 +8,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mule.api.annotations.Config;
-import org.mule.modules.zipkinlogger.ZipkinLoggerConnector;
-import org.mule.modules.zipkinlogger.config.ZipkinConsoleConnectorConfig;
-import org.mule.modules.zipkinlogger.model.LoggerData;
-import org.mule.modules.zipkinlogger.model.LoggerTag;
-import org.mule.modules.zipkinlogger.model.TraceData;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
+
+import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinConsoleConnectorConfig;
+import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData;
+import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerTag;
+import com.mulesoft.consulting.zipkinloggerconnector.model.TraceData;
 
 import brave.Span.Kind;
 

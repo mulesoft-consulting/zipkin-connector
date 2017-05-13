@@ -1,13 +1,14 @@
-package org.mule.modules.zipkinlogger.automation.runner;
+package com.mulesoft.consulting.zipkinloggerconnector.automation.runner;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
-import org.mule.modules.zipkinlogger.ZipkinLoggerConnector;
-import org.mule.modules.zipkinlogger.automation.functional.CreateAndStartNewSpanTests;
 import org.mule.tools.devkit.ctf.mockup.ConnectorTestContext;
+
+import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import com.mulesoft.consulting.zipkinloggerconnector.automation.functional.CreateAndStartNewSpanTests;
 
 @RunWith(Suite.class)
 @SuiteClasses({

@@ -1,4 +1,4 @@
-package org.mule.modules.zipkinlogger;
+package com.mulesoft.consulting.zipkinloggerconnector;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,15 +17,16 @@ import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.MetaDataKeyParam;
 import org.mule.api.annotations.param.MetaDataKeyParamAffectsType;
-import org.mule.modules.zipkinlogger.config.AbstractConfig;
-import org.mule.modules.zipkinlogger.config.ZipkinConsoleConnectorConfig;
-import org.mule.modules.zipkinlogger.config.ZipkinHttpConnectorConfig;
-import org.mule.modules.zipkinlogger.datasense.DefaultCategory;
-import org.mule.modules.zipkinlogger.model.LoggerData;
-import org.mule.modules.zipkinlogger.model.LoggerTag;
-import org.mule.modules.zipkinlogger.model.TraceData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.mulesoft.consulting.zipkinloggerconnector.config.AbstractConfig;
+import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinConsoleConnectorConfig;
+import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinHttpConnectorConfig;
+import com.mulesoft.consulting.zipkinloggerconnector.datasense.DefaultCategory;
+import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData;
+import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerTag;
+import com.mulesoft.consulting.zipkinloggerconnector.model.TraceData;
 
 import brave.Span.Kind;
 import brave.Tracer;

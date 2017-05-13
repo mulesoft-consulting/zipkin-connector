@@ -1,4 +1,4 @@
-package org.mule.modules.zipkinlogger.config;
+package com.mulesoft.consulting.zipkinloggerconnector.config;
 
 import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.components.Configuration;

@@ -1,5 +1,5 @@
 
-package org.mule.modules.zipkinlogger.model;
+package com.mulesoft.consulting.zipkinloggerconnector.model;
 
 import java.util.ArrayList;
 import java.util.List;

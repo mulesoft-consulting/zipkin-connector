@@ -1,4 +1,4 @@
-package org.mule.modules.zipkinlogger.datasense;
+package com.mulesoft.consulting.zipkinloggerconnector.datasense;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +13,9 @@ import org.mule.common.metadata.MetaData;
 import org.mule.common.metadata.MetaDataKey;
 import org.mule.common.metadata.MetaDataModel;
 import org.mule.common.metadata.builder.DefaultMetaDataBuilder;
-import org.mule.modules.zipkinlogger.model.LoggerData;
-import org.mule.modules.zipkinlogger.model.TraceData;
+
+import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData;
+import com.mulesoft.consulting.zipkinloggerconnector.model.TraceData;
 
 @MetaDataCategory
 public class DefaultCategory {
