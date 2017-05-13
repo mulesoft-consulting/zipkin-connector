@@ -249,7 +249,7 @@ public class ZipkinLoggerConnector {
 
 		if (contextOrFlags.context() != null) {
 			logger.debug("Found parent tags, joining");
-			return tracer.joinSpan(contextOrFlags.context());
+			return tracer.newChild(contextOrFlags.context());
 		} else {
 			logger.debug("Starting new span, propagation details not found.");
 			return tracer.newTrace(contextOrFlags.samplingFlags());

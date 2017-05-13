@@ -41,7 +41,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <add-message-property key="X-B3-Sampled" value="#[payload.sampled]"/>
         </message-properties-transformer>
         <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP"/>
-        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" spanIdExpr="#[flowVars.clientSpanId1]" doc:name="Zipkin Logger"/>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" spanId="#[flowVars.clientSpanId1]" doc:name="Zipkin Logger"/>
     </flow>
     <flow name="zipkin-logger-exampleFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
@@ -101,6 +101,6 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <add-message-property key="X-B3-Sampled" value="#[payload.sampled]"/>
         </message-properties-transformer>
         <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP"/>
-        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" spanIdExpr="#[flowVars.clientSpanId]" doc:name="Zipkin Logger"/>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" spanId="#[flowVars.clientSpanId]" doc:name="Zipkin Logger"/>
     </sub-flow>
 </mule>
