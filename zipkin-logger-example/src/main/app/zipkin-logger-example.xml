@@ -11,11 +11,11 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" connectionIdleTimeout="3000000"/>
     <http:request-config name="HTTP_Request_Configuration"  host="google.com" port="80" basePath="/" doc:name="HTTP Request Configuration" connectionIdleTimeout="3000000"/>
-    <zipkin-logger:config name="Zipkin_Logger__ZipkinHTTPConfiguration" doc:name="Zipkin Logger: ZipkinHTTPConfiguration" serviceName="my-polling-client"/>
+    <zipkin-logger:http-config name="Zipkin_Logger__ZipkinHTTPConfiguration" doc:name="Zipkin Logger: ZipkinHTTPConfiguration" serviceName="my-polling-client"/>
     <zipkin-logger:console-config name="Zipkin_Logger__Zipkin_Console_Logging_Configuration" doc:name="Zipkin Logger: Zipkin Console Logging Configuration"/>
     <http:request-config name="HTTP_Request_Configuration1" host="localhost" port="8081" basePath="/" doc:name="HTTP Request Configuration"/>
-    <zipkin-logger:config name="Zipkin_Logger__ZipkinHTTPConfiguration1" serviceName="my-proxy-service" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
-    <zipkin-logger:config name="Zipkin_Logger__ZipkinHTTPConfiguration2" serviceName="google-proxy" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
+    <zipkin-logger:http-config name="Zipkin_Logger__ZipkinHTTPConfiguration1" serviceName="my-proxy-service" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
+    <zipkin-logger:http-config name="Zipkin_Logger__ZipkinHTTPConfiguration2" serviceName="google-proxy" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
     <flow name="Polling-client-flow">
         <poll doc:name="Poll">
             <fixed-frequency-scheduler frequency="10000"/>
