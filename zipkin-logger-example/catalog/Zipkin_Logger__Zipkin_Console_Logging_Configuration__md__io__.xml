@@ -59,7 +59,7 @@
             <output class="org.mule.common.metadata.DefaultMetaData">
               <payload class="org.mule.tooling.metadata.api.TypeRefMetaDataModel">
                 <connectorName>Zipkin_Logger__Zipkin_Console_Logging_Configuration</connectorName>
-                <typeId>brave.Span</typeId>
+                <typeId>org.mule.modules.zipkinlogger.model.TraceData</typeId>
               </payload>
               <properties class="tree-map">
                 <entry>
@@ -216,9 +216,11 @@
           <string>__default__</string>
           <org.mule.tooling.metadata.cache.DefaultMetadataCacheEntry>
             <output class="org.mule.common.metadata.DefaultMetaData">
-              <payload class="org.mule.tooling.metadata.api.TypeRefMetaDataModel">
-                <connectorName>Zipkin_Logger__Zipkin_Console_Logging_Configuration</connectorName>
-                <typeId>brave.Span</typeId>
+              <payload class="org.mule.common.metadata.DefaultSimpleMetaDataModel">
+                <dataType>VOID</dataType>
+                <metaDataModelPropertiesManager>
+                  <properties/>
+                </metaDataModelPropertiesManager>
               </payload>
               <properties class="tree-map">
                 <entry>

@@ -160,10 +160,24 @@ public class ZipkinLoggerConnector {
 		// Store span for future lookup
 		spansInFlight.put(spanId, span);
 
+		// ParentId propagation: if it is a standalone span, populate it with
+		// spanId,
+		// if joined span, propagate the parentId
+		String parentId = null;
+		if ("join_id".equals(standaloneOrJoinedSpan)) {
+			Long parentIdValue = span.context().parentId();
+			parentId = Long.toHexString(parentIdValue != null ? parentIdValue : span.context().spanId());
+		} else if ("standalone_id".equals(standaloneOrJoinedSpan)) {
+			parentId = Long.toHexString(span.context().spanId());
+		}
+
+		if (parentId == null) {
+			throw new RuntimeException("Unable to populate span parentId. Check the propagation mapping.");
+		}
+
 		TraceData traceDataToReturn = new TraceData(Long.toHexString(span.context().traceId()),
-				Long.toHexString(span.context().spanId()),
-				span.context().parentId() != null ? Long.toHexString(span.context().parentId()) : null,
-				Boolean.toString(span.context().sampled()), Boolean.toString(span.context().debug()));
+				Long.toHexString(span.context().spanId()), parentId, span.context().sampled() ? "1" : "0",
+				span.context().debug() ? "1" : "0");
 
 		return traceDataToReturn;
 	}
@@ -224,7 +238,7 @@ public class ZipkinLoggerConnector {
 						return message.getTraceData().getSpanId();
 					} else if ("X-B3-Sampled".equals(key)) {
 						return message.getTraceData().getSampled();
-					} else if ("X-B3-Debug".equals(key)) {
+					} else if ("X-B3-Flags".equals(key)) {
 						return message.getTraceData().getDebug();
 					}
 				}

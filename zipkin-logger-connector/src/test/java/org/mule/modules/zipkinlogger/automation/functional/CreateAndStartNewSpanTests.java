@@ -1,7 +1,7 @@
 package org.mule.modules.zipkinlogger.automation.functional;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import org.junit.After;
@@ -36,6 +36,9 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 
 	}
 
+	/*
+	 * Creates new span
+	 */
 	@Test
 	public void testStandaloneSpan() {
 
@@ -53,7 +56,7 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		}
 
 		// No parentId
-		assertNull(trace.getParentSpanId());
+		assertEquals(trace.getParentSpanId(), trace.getSpanId());
 
 		// If not found, returns null
 		try {
@@ -65,9 +68,12 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 
 	}
 
+	/*
+	 * Joins the parent trace
+	 */
 	@Test
-	public void testSpanWithParent() {
-
+	public void testSpanWithParentSpanIdAndSpanId() {
+		
 		LoggerData tags = new LoggerData();
 		tags.getLoggerTags().add(new LoggerTag("test1", "value123"));
 		tags.getLoggerTags().add(new LoggerTag("test2", "value789"));
@@ -93,6 +99,32 @@ public class CreateAndStartNewSpanTests extends AbstractTestCase<ZipkinLoggerCon
 		} catch (RuntimeException e) {
 
 		}
+	}
+
+	/*
+	 * If no spanId is provided, starts its own trace
+	 */
+	@Test
+	public void testSpanWithParentSpanIdAndNoSpanId() {
+
+		LoggerData tags = new LoggerData();
+		tags.getLoggerTags().add(new LoggerTag("test1", "value123"));
+		tags.getLoggerTags().add(new LoggerTag("test2", "value789"));
+
+		tags.setTraceData(new TraceData("be3c95060bc041d5", null, "2b29459eb5dfc892", null, null));
+
+		TraceData trace = getConnector().createAndStartSpan(null, "join_id", tags, Kind.SERVER, "myspan", "test");
+		String spanId = trace.getSpanId();
+
+		try {
+			getConnector().finishSpan('"' + spanId + '"');
+		} catch (RuntimeException e) {
+			fail("Exception thrown");
+		}
+
+		// There is a parentId, but it is equal to spanId and it is weird. Illegal state.
+		assertEquals(trace.getParentSpanId(), trace.getSpanId());
+
 	}
 
 }
