@@ -1,5 +1,5 @@
 
-package org.mule.modules.zipkinlogger.model;
+package com.mulesoft.consulting.zipkinloggerconnector.model;
 
 public class LoggerTag {
 
