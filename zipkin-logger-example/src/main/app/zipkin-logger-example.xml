@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:zipkin-logger="http://www.mulesoft.org/schema/mule/zipkin-logger" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:zipkin-logger="http://www.mulesoft.org/schema/mule/zipkin-logger" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/zipkin-logger http://www.mulesoft.org/schema/mule/zipkin-logger/current/mule-zipkin-logger.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" connectionIdleTimeout="3000000"/>
     <http:request-config name="HTTP_Request_Configuration"  host="google.com" port="80" basePath="/" doc:name="HTTP Request Configuration" connectionIdleTimeout="3000000"/>
     <zipkin-logger:config name="Zipkin_Logger__ZipkinHTTPConfiguration" doc:name="Zipkin Logger: ZipkinHTTPConfiguration" serviceName="my-polling-client"/>
@@ -15,12 +16,12 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
     <http:request-config name="HTTP_Request_Configuration1" host="localhost" port="8081" basePath="/" doc:name="HTTP Request Configuration"/>
     <zipkin-logger:config name="Zipkin_Logger__ZipkinHTTPConfiguration1" serviceName="my-proxy-service" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
     <zipkin-logger:config name="Zipkin_Logger__ZipkinHTTPConfiguration2" serviceName="google-proxy" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
-    <flow name="zipkin-logger-exampleFlow1">
+    <flow name="Polling-client-flow">
         <poll doc:name="Poll">
             <fixed-frequency-scheduler frequency="10000"/>
             <logger message="Starting a call" level="INFO" doc:name="Logger"/>
         </poll>
-        <dw:transform-message doc:name="Transform Message">
+        <dw:transform-message doc:name="Prepare Zipkin message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
@@ -34,8 +35,8 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 }
 ]]></dw:set-payload>
         </dw:transform-message>
-        <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration" standaloneOrJoinedSpan="standalone_id" flowVariableToSetWithId="clientSpanId1" spanName="myspan1" spanType="CLIENT" doc:name="Zipkin Logger"/>
-        <message-properties-transformer doc:name="Message Properties">
+        <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration" standaloneOrJoinedSpan="standalone_id" flowVariableToSetWithId="clientSpanId1" spanName="myspan1" spanType="CLIENT" doc:name="Start Zipkin span #1"/>
+        <message-properties-transformer doc:name="Propagate Zipkin properties">
             <add-message-property key="X-B3-Debug" value="#[payload.debug]"/>
             <add-message-property key="X-B3-ParentSpanId" value="#[payload.parentSpanId]"/>
             <add-message-property key="X-B3-TraceId" value="#[payload.traceId]"/>
@@ -43,11 +44,11 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <add-message-property key="X-B3-Sampled" value="#[payload.sampled]"/>
         </message-properties-transformer>
         <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP"/>
-        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration" spanId="#[flowVars.clientSpanId1]" doc:name="Zipkin Logger"/>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration" spanId="#[flowVars.clientSpanId1]" doc:name="Finish Zipkin span #1"/>
     </flow>
-    <flow name="zipkin-logger-exampleFlow">
+    <flow name="Service-flow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
-        <dw:transform-message doc:name="Transform Message">
+        <dw:transform-message doc:name="Prepare Zipkin message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
@@ -67,13 +68,13 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 	class : "com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData"
 }]]></dw:set-payload>
         </dw:transform-message>
-        <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration1" standaloneOrJoinedSpan="join_id" spanName="myspan2" doc:name="Zipkin Logger"/>
-        <flow-ref name="zipkin-logger-exampleSub_Flow" doc:name="zipkin-logger-exampleSub_Flow"/>
-        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration1" doc:name="Zipkin Logger"/>
-        <set-payload value="{&quot;result&quot;: &quot;success&quot;}" doc:name="Set Payload"/>
+        <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration1" standaloneOrJoinedSpan="join_id" spanName="myspan2" doc:name="Start Zipkin span #2"/>
+        <flow-ref name="zipkin-logger-google-proxy-subflow" doc:name="zipkin-logger-google-proxy-subflow"/>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration1" doc:name="FInish Zipkin span #2"/>
+        <set-payload value="{&quot;result&quot;: &quot;success&quot;}" doc:name="Set Response Payload"/>
     </flow>
-    <sub-flow name="zipkin-logger-exampleSub_Flow">
-        <dw:transform-message doc:name="Transform Message">
+    <sub-flow name="zipkin-logger-google-proxy-subflow">
+        <dw:transform-message doc:name="Prepare Zipkin message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
@@ -94,8 +95,8 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 }
 ]]></dw:set-payload>
         </dw:transform-message>
-        <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration2" standaloneOrJoinedSpan="join_id" flowVariableToSetWithId="clientSpanId" spanName="myspan3" spanType="CLIENT" doc:name="Zipkin Logger"/>
-        <message-properties-transformer doc:name="Message Properties">
+        <zipkin-logger:create-and-start-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration2" standaloneOrJoinedSpan="join_id" flowVariableToSetWithId="clientSpanId" spanName="myspan3" spanType="CLIENT" doc:name="Start Zipkin span #3"/>
+        <message-properties-transformer doc:name="Propagate Zipkin properties">
             <add-message-property key="X-B3-Debug" value="#[payload.debug]"/>
             <add-message-property key="X-B3-ParentSpanId" value="#[payload.parentSpanId]"/>
             <add-message-property key="X-B3-TraceId" value="#[payload.traceId]"/>
@@ -103,6 +104,6 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <add-message-property key="X-B3-Sampled" value="#[payload.sampled]"/>
         </message-properties-transformer>
         <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP"/>
-        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration2" spanId="#[flowVars.clientSpanId]" doc:name="Zipkin Logger"/>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration2" spanId="#[flowVars.clientSpanId]" doc:name="Finish Zipkin span #3"/>
     </sub-flow>
 </mule>
