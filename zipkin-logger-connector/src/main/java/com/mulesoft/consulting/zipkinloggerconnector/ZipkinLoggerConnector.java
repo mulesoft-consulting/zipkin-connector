@@ -9,7 +9,6 @@ import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
-import org.mule.api.annotations.MetaDataScope;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.lifecycle.Stop;
@@ -21,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import com.mulesoft.consulting.zipkinloggerconnector.config.AbstractConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinConsoleConnectorConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinHttpConnectorConfig;
-import com.mulesoft.consulting.zipkinloggerconnector.datasense.DefaultCategory;
 
 import brave.Span.Kind;
 import brave.Tracer;
@@ -38,7 +36,6 @@ import zipkin.reporter.okhttp3.OkHttpSender;
  *
  */
 @Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger")
-@MetaDataScope(DefaultCategory.class)
 public class ZipkinLoggerConnector {
 
 	private static final String LOGGER_KEY = "log";
@@ -76,7 +73,7 @@ public class ZipkinLoggerConnector {
 	}
 
 	@Processor
-	public void joinSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public String joinSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "newSpanId") String flowVariableToSetWithId,
@@ -94,7 +91,7 @@ public class ZipkinLoggerConnector {
 		Boolean nullableSampled = parentSpan.context().sampled();
 		Boolean debug = parentSpan.context().debug();
 
-		createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+		return createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
 				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
@@ -132,7 +129,7 @@ public class ZipkinLoggerConnector {
 	}
 
 	@Processor
-	public void finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
+	public String finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
 
 		brave.Span span = spansInFlight.remove(expressionToGetSpanId);
 
@@ -142,22 +139,23 @@ public class ZipkinLoggerConnector {
 			throw new RuntimeException("Span " + expressionToGetSpanId + " not found");
 		}
 
+		return expressionToGetSpanId;
 	}
 
 	@Processor
-	public void createNewTraceAsync(@Optional @Default("#[]") String logMessage,
+	public String createNewTraceAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "mytrace") String traceName) {
 
 		brave.Span span = tracer.newTrace().name(traceName);
 
-		startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
+		return startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 
 	}
 
 	@Processor
-	public void joinSpanAsync(@Optional @Default("#[]") String logMessage,
+	public String joinSpanAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default("#[flowVars.spanId]") String parentSpanId) {
@@ -174,12 +172,12 @@ public class ZipkinLoggerConnector {
 		Boolean nullableSampled = parentSpan.context().sampled();
 		Boolean debug = parentSpan.context().debug();
 
-		createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
+		return createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
 				traceIdLong, nullableSampled, debug);
 	}
 
 	@Processor
-	public void joinExternalSpanAsync(@Optional @Default("#[]") String logMessage,
+	public String joinExternalSpanAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default("#[message.inboundProperties.'x-b3-spanid']") String spanId,
@@ -204,7 +202,7 @@ public class ZipkinLoggerConnector {
 			if (flags.equals("1"))
 				debug = true;
 
-		createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
+		return createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
 				traceIdLong, nullableSampled, debug);
 	}
 
@@ -304,7 +302,7 @@ public class ZipkinLoggerConnector {
 		return newSpanId;
 	}
 
-	private void createAndStartSpanAsync(String logMessage, Map<String, String> additionalTags,
+	private String createAndStartSpanAsync(String logMessage, Map<String, String> additionalTags,
 			Kind ServerOrClientSpanType, String spanName, Long parentIdLong, long spanIdLong, long traceIdLong,
 			Boolean nullableSampled, Boolean debug) {
 
@@ -313,10 +311,10 @@ public class ZipkinLoggerConnector {
 
 		brave.Span span = tracer.newChild(parent);
 
-		startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
+		return startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 	}
 
-	private void startSpanAsync(String logMessage, Map<String, String> additionalTags, Kind ServerOrClientSpanType,
+	private String startSpanAsync(String logMessage, Map<String, String> additionalTags, Kind ServerOrClientSpanType,
 			String spanName, brave.Span span) {
 		span.name(spanName).kind(ServerOrClientSpanType);
 
@@ -331,6 +329,8 @@ public class ZipkinLoggerConnector {
 		span.remoteEndpoint(Endpoint.builder().serviceName(serviceName).build());
 
 		span.start().flush();
+		
+		return Long.toHexString(span.context().spanId());
 	}
 
 	public AbstractConfig getConfig() {
