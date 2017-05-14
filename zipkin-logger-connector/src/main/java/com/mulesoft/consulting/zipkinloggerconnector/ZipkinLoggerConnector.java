@@ -209,6 +209,29 @@ public class ZipkinLoggerConnector {
 				traceIdLong, nullableSampled, debug);
 	}
 
+	@Processor
+	public void setMuleMessageProperties(MuleEvent muleEvent, @Default("#[flowVars.spanId]") String spanIdToRetrieve,
+			@Default("x-b3-spanid") String spanIdPropertyName,
+			@Default("x-b3-parentspanid") String parentSpanIdPropertyName,
+			@Default("x-b3-traceid") String traceIdPropertyName, @Default("x-b3-sampled") String sampledPropertyName,
+			@Default("x-b3-flags") String flagsPropertyName) {
+
+		brave.Span span = getSpansInFlight().get(spanIdToRetrieve);
+
+		if (span == null) {
+			throw new RuntimeException("Span " + spanIdToRetrieve + " not found");
+		}
+
+		String sampled = span.context().sampled() != null ? (span.context().sampled() ? "1" : "0") : null;
+
+		muleEvent.getMessage().setOutboundProperty(spanIdPropertyName, Long.toHexString(span.context().spanId()));
+		muleEvent.getMessage().setOutboundProperty(parentSpanIdPropertyName, span.context().parentId() != null
+				? Long.toHexString(span.context().parentId()) : Long.toHexString(span.context().spanId()));
+		muleEvent.getMessage().setOutboundProperty(traceIdPropertyName, Long.toHexString(span.context().traceId()));
+		muleEvent.getMessage().setOutboundProperty(sampledPropertyName, sampled);
+		muleEvent.getMessage().setOutboundProperty(flagsPropertyName, span.context().debug() ? "1" : "0");
+	}
+
 	/*
 	 * Initialise Zipkin connector
 	 */

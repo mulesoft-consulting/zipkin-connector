@@ -28,12 +28,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <zipkin-logger:additional-tag key="Entry2">Entry2222</zipkin-logger:additional-tag>
             </zipkin-logger:additional-tags>
         </zipkin-logger:create-new-trace>
-        <message-properties-transformer doc:name="Map Zipkin properties into HTTP">
-            <add-message-property key="x-b3-parentspanid" value="#[flowVars.newSpanId]"/>
-            <add-message-property key="x-b3-traceid" value="#[flowVars.newSpanId]"/>
-            <add-message-property key="x-b3-sampled" value="1"/>
-            <add-message-property key="x-b3-spanid" value="#[flowVars.newSpanId]"/>
-        </message-properties-transformer>
+        <zipkin-logger:set-mule-message-properties config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration" spanIdToRetrieve="#[flowVars.newSpanId]" doc:name="Populate message properties with propagation data"/>
         <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP client">
             <http:success-status-code-validator values="200,500,301"/>
         </http:request>
