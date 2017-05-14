@@ -8,11 +8,11 @@ import org.junit.runners.Suite.SuiteClasses;
 import org.mule.tools.devkit.ctf.mockup.ConnectorTestContext;
 
 import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
-import com.mulesoft.consulting.zipkinloggerconnector.automation.functional.CreateAndStartNewSpanTests;
+import com.mulesoft.consulting.zipkinloggerconnector.automation.functional.ZipkinLoggerConnectorTests;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-	CreateAndStartNewSpanTests.class
+	ZipkinLoggerConnectorTests.class
 })
 
 public class FunctionalTestSuite {

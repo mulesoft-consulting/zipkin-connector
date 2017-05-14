@@ -1,7 +1,6 @@
 package com.mulesoft.consulting.zipkinloggerconnector;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -12,12 +11,10 @@ import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.MetaDataScope;
 import org.mule.api.annotations.Processor;
-import org.mule.api.annotations.display.FriendlyName;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
-import org.mule.api.annotations.param.MetaDataKeyParam;
-import org.mule.api.annotations.param.MetaDataKeyParamAffectsType;
+import org.mule.extension.annotations.param.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,16 +22,11 @@ import com.mulesoft.consulting.zipkinloggerconnector.config.AbstractConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinConsoleConnectorConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinHttpConnectorConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.datasense.DefaultCategory;
-import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData;
-import com.mulesoft.consulting.zipkinloggerconnector.model.LoggerTag;
-import com.mulesoft.consulting.zipkinloggerconnector.model.TraceData;
 
 import brave.Span.Kind;
 import brave.Tracer;
 import brave.Tracing;
-import brave.propagation.Propagation.Getter;
-import brave.propagation.TraceContext.Extractor;
-import brave.propagation.TraceContextOrSamplingFlags;
+import brave.propagation.TraceContext;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
@@ -48,6 +40,8 @@ import zipkin.reporter.okhttp3.OkHttpSender;
 @Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger")
 @MetaDataScope(DefaultCategory.class)
 public class ZipkinLoggerConnector {
+
+	private static final String LOGGER_KEY = "log";
 
 	@Config
 	AbstractConfig config;
@@ -64,6 +58,155 @@ public class ZipkinLoggerConnector {
 	private String serviceName;
 
 	private static Logger logger = LoggerFactory.getLogger(ZipkinLoggerConnector.class);
+
+	@Processor
+	public String createNewTrace(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags,
+			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
+			@Default(value = "newSpanId") String flowVariableToSetWithId,
+			@Default(value = "mytrace") String traceName) {
+
+		brave.Span span = tracer.newTrace().name(traceName);
+
+		String newSpanId = startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				flowVariableToSetWithId, span);
+
+		return newSpanId;
+
+	}
+
+	@Processor
+	public void joinSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags,
+			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
+			@Default(value = "newSpanId") String flowVariableToSetWithId,
+			@Default("#[flowVars.spanId]") String parentSpanId) {
+
+		brave.Span parentSpan = spansInFlight.get(parentSpanId);
+
+		if (parentSpan == null) {
+			throw new RuntimeException("Span " + parentSpanId + " not found");
+		}
+
+		Long parentIdLong = parentSpan.context().parentId();
+		long spanIdLong = parentSpan.context().spanId();
+		long traceIdLong = parentSpan.context().traceId();
+		Boolean nullableSampled = parentSpan.context().sampled();
+		Boolean debug = parentSpan.context().debug();
+
+		createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
+
+	}
+
+	@Processor
+	public String joinExternalSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags,
+			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
+			@Default(value = "spanId") String flowVariableToSetWithId,
+			@Default("#[message.inboundProperties.'x-b3-spanid']") String spanId,
+			@Default("#[message.inboundProperties.'x-b3-parentspanid']") String parentSpanId,
+			@Default("#[message.inboundProperties.'x-b3-traceid']") String traceId,
+			@Optional @Default("#[message.inboundProperties.'x-b3-sampled']") String sampled,
+			@Optional @Default("#[message.inboundProperties.'x-b3-flags']") String flags) {
+
+		Long parentIdLong = Long.parseUnsignedLong(parentSpanId, 16);
+		long spanIdLong = Long.parseUnsignedLong(spanId, 16);
+		long traceIdLong = Long.parseUnsignedLong(traceId, 16);
+		Boolean nullableSampled = null;
+
+		if (sampled != null && !sampled.equals(""))
+			if (sampled.equals("1"))
+				nullableSampled = true;
+			else if (sampled.equals("0"))
+				nullableSampled = false;
+
+		Boolean debug = false;
+		if (flags != null && !flags.equals(""))
+			if (flags.equals("1"))
+				debug = true;
+
+		return createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
+
+	}
+
+	@Processor
+	public void finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
+
+		brave.Span span = spansInFlight.remove(expressionToGetSpanId);
+
+		if (span != null) {
+			span.finish();
+		} else {
+			throw new RuntimeException("Span " + expressionToGetSpanId + " not found");
+		}
+
+	}
+
+	@Processor
+	public void createNewTraceAsync(@Optional @Default("#[]") String logMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags,
+			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
+			@Default(value = "mytrace") String traceName) {
+
+		brave.Span span = tracer.newTrace().name(traceName);
+
+		startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
+
+	}
+
+	@Processor
+	public void joinSpanAsync(@Optional @Default("#[]") String logMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags,
+			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
+			@Default("#[flowVars.spanId]") String parentSpanId) {
+
+		brave.Span parentSpan = spansInFlight.get(parentSpanId);
+
+		if (parentSpan == null) {
+			throw new RuntimeException("Span " + parentSpanId + " not found");
+		}
+
+		Long parentIdLong = parentSpan.context().parentId();
+		long spanIdLong = parentSpan.context().spanId();
+		long traceIdLong = parentSpan.context().traceId();
+		Boolean nullableSampled = parentSpan.context().sampled();
+		Boolean debug = parentSpan.context().debug();
+
+		createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
+				traceIdLong, nullableSampled, debug);
+	}
+
+	@Processor
+	public void joinExternalSpanAsync(@Optional @Default("#[]") String logMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags,
+			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
+			@Default("#[message.inboundProperties.'x-b3-spanid']") String spanId,
+			@Default("#[message.inboundProperties.'x-b3-parentspanid']") String parentSpanId,
+			@Default("#[message.inboundProperties.'x-b3-traceid']") String traceId,
+			@Optional @Default("#[message.inboundProperties.'x-b3-sampled']") String sampled,
+			@Optional @Default("#[message.inboundProperties.'x-b3-flags']") String flags) {
+
+		Long parentIdLong = Long.parseUnsignedLong(parentSpanId, 16);
+		long spanIdLong = Long.parseUnsignedLong(spanId, 16);
+		long traceIdLong = Long.parseUnsignedLong(traceId, 16);
+		Boolean nullableSampled = null;
+
+		if (sampled != null && !sampled.equals(""))
+			if (sampled.equals("1"))
+				nullableSampled = true;
+			else if (sampled.equals("0"))
+				nullableSampled = false;
+
+		Boolean debug = false;
+		if (flags != null && !flags.equals(""))
+			if (flags.equals("1"))
+				debug = true;
+
+		createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
+				traceIdLong, nullableSampled, debug);
+	}
 
 	/*
 	 * Initialise Zipkin connector
@@ -83,6 +226,8 @@ public class ZipkinLoggerConnector {
 			tracing = Tracing.newBuilder().localServiceName(httpConfig.getServiceName()).reporter(reporter).build();
 
 			serviceName = httpConfig.getServiceName();
+
+			logger.debug("Instantiated " + ZipkinHttpConnectorConfig.class.getName());
 		} else if (config instanceof ZipkinConsoleConnectorConfig) {
 			Reporter<Span> reporter = Reporter.CONSOLE;
 
@@ -90,6 +235,8 @@ public class ZipkinLoggerConnector {
 			tracing = Tracing.newBuilder().localServiceName(consoleConfig.getServiceName()).reporter(reporter).build();
 
 			serviceName = consoleConfig.getServiceName();
+
+			logger.debug("Instantiated " + ZipkinConsoleConnectorConfig.class.getName());
 		} else {
 			throw new RuntimeException("Unknown configuration option");
 		}
@@ -111,162 +258,94 @@ public class ZipkinLoggerConnector {
 
 		if (reporter != null)
 			reporter.close();
+
+		logger.debug("ZipkinLogger shutdown called");
 	}
 
-	/**
-	 * Creates new span that can be a standalone span, or part of a parent span
-	 * coming with the request
-	 * 
-	 * @param muleEvent
-	 *            injected at runtime
-	 * @param standaloneOrJoinedSpan
-	 *            New standalone span, or join another parent span
-	 * @param spanTags
-	 *            collection of tags and parent information passed in the
-	 *            payload
-	 * @param spanType
-	 *            SERVER or CLIENT type of request
-	 * @param spanName
-	 *            Name of the span
-	 * @param flowVariableToSetWithId
-	 *            flow variable to populate with spanId
-	 * 
-	 * @return created span object
-	 */
-	@Processor
-	public TraceData createAndStartSpan(MuleEvent muleEvent,
-			@MetaDataKeyParam(affects = MetaDataKeyParamAffectsType.BOTH) String standaloneOrJoinedSpan,
-			@Default("#[payload]") Object spanTags, @Default(value = "SERVER") Kind spanType,
-			@Default(value = "myspan") String spanName, @Default(value = "spanId") String flowVariableToSetWithId) {
+	private String createAndStartSpanWithParent(MuleEvent muleEvent, String logMessage,
+			Map<String, String> additionalTags, Kind ServerOrClientSpanType, String spanName,
+			String flowVariableToSetWithId, Long parentIdLong, long spanIdLong, long traceIdLong,
+			Boolean nullableSampled, Boolean debug) {
 
-		// Check if the context is propagated from incoming call
-		brave.Span span = createOrJoinSpan((LoggerData) spanTags, standaloneOrJoinedSpan);
+		TraceContext parent = TraceContext.newBuilder().parentId(parentIdLong).spanId(spanIdLong).traceId(traceIdLong)
+				.sampled(nullableSampled).debug(debug).build();
 
-		span.name(spanName).kind(spanType);
+		brave.Span span = tracer.newChild(parent);
 
-		// Get the tags
-		extractTags((LoggerData) spanTags, span);
+		String newSpanId = startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				flowVariableToSetWithId, span);
+		return newSpanId;
+	}
+
+	private String startSpan(MuleEvent muleEvent, String logMessage, Map<String, String> additionalTags,
+			Kind ServerOrClientSpanType, String spanName, String flowVariableToSetWithId, brave.Span span) {
+
+		span.name(spanName).kind(ServerOrClientSpanType);
+
+		// Create logging record and get the tags
+		if (logMessage != null && !logMessage.equals(""))
+			span.tag(LOGGER_KEY, logMessage);
+
+		for (String key : additionalTags.keySet()) {
+			span.tag(key, additionalTags.get(key));
+		}
+
+		String newSpanId = Long.toHexString(span.context().spanId());
 
 		span.remoteEndpoint(Endpoint.builder().serviceName(serviceName).build());
 
 		span.start();
 
-		String spanId = Long.toHexString(span.context().spanId());
-
 		// Set the flowVar with created spanId
-		muleEvent.setFlowVariable(flowVariableToSetWithId, spanId);
+		muleEvent.setFlowVariable(flowVariableToSetWithId, newSpanId);
 
 		// Store span for future lookup
-		spansInFlight.put(spanId, span);
-
-		// ParentId propagation: if it is a standalone span, populate it with
-		// spanId,
-		// if joined span, propagate the parentId
-		String parentId = null;
-		if ("join_id".equals(standaloneOrJoinedSpan)) {
-			Long parentIdValue = span.context().parentId();
-			parentId = Long.toHexString(parentIdValue != null ? parentIdValue : span.context().spanId());
-		} else if ("standalone_id".equals(standaloneOrJoinedSpan)) {
-			parentId = Long.toHexString(span.context().spanId());
-		}
-
-		if (parentId == null) {
-			throw new RuntimeException("Unable to populate span parentId. Check the propagation mapping.");
-		}
-
-		TraceData traceDataToReturn = new TraceData(Long.toHexString(span.context().traceId()),
-				Long.toHexString(span.context().spanId()), parentId, span.context().sampled() ? "1" : "0",
-				span.context().debug() ? "1" : "0");
-
-		return traceDataToReturn;
+		spansInFlight.put(newSpanId, span);
+		return newSpanId;
 	}
 
-	/**
-	 * Closes the existing span and causes it to be logged. Requires span
-	 * creation prior to calling.
-	 * 
-	 * @param spanIdExpr
-	 *            MEL expression to result in spanId.
-	 * @return
-	 */
-	@Processor
-	public void finishSpan(
-			@Default(value = "#[flowVars.spanId]") @FriendlyName("Expression to get spanId") String spanId) {
+	private void createAndStartSpanAsync(String logMessage, Map<String, String> additionalTags,
+			Kind ServerOrClientSpanType, String spanName, Long parentIdLong, long spanIdLong, long traceIdLong,
+			Boolean nullableSampled, Boolean debug) {
 
-		brave.Span span = spansInFlight.remove(spanId);
+		TraceContext parent = TraceContext.newBuilder().parentId(parentIdLong).spanId(spanIdLong).traceId(traceIdLong)
+				.sampled(nullableSampled).debug(debug).build();
 
-		if (span != null) {
-			span.finish();
-		} else {
-			throw new RuntimeException("Span " + spanId + " not found");
+		brave.Span span = tracer.newChild(parent);
+
+		startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
+	}
+
+	private void startSpanAsync(String logMessage, Map<String, String> additionalTags, Kind ServerOrClientSpanType,
+			String spanName, brave.Span span) {
+		span.name(spanName).kind(ServerOrClientSpanType);
+
+		// Create logging record and get the tags
+		if (logMessage != null && !logMessage.equals(""))
+			span.tag(LOGGER_KEY, logMessage);
+
+		for (String key : additionalTags.keySet()) {
+			span.tag(key, additionalTags.get(key));
 		}
 
-	}
+		span.remoteEndpoint(Endpoint.builder().serviceName(serviceName).build());
 
-	/**
-	 * @param spanTags
-	 * @param span
-	 */
-	private void extractTags(LoggerData spanTags, brave.Span span) {
-
-		List<LoggerTag> tags = spanTags.getLoggerTags();
-
-		// Add tags to span
-		for (LoggerTag tag : tags) {
-			span.tag(tag.getKey(), tag.getValue());
-		}
-	}
-
-	/**
-	 * @param spanCreationData
-	 * @param spanCreationType
-	 * @return
-	 */
-	private brave.Span createOrJoinSpan(LoggerData tagData, final String spanCreationType) {
-
-		Extractor<LoggerData> extractor = tracing.propagation().extractor(new Getter<LoggerData, String>() {
-			@Override
-			public String get(LoggerData message, String key) {
-				if ("join_id".equals(spanCreationType)) {
-					if ("X-B3-TraceId".equals(key)) {
-						return message.getTraceData().getTraceId();
-					} else if ("X-B3-ParentSpanId".equals(key)) {
-						return message.getTraceData().getParentSpanId();
-					} else if ("X-B3-SpanId".equals(key)) {
-						return message.getTraceData().getSpanId();
-					} else if ("X-B3-Sampled".equals(key)) {
-						return message.getTraceData().getSampled();
-					} else if ("X-B3-Flags".equals(key)) {
-						return message.getTraceData().getDebug();
-					}
-				}
-				return null;
-
-			}
-		});
-
-		TraceContextOrSamplingFlags contextOrFlags = extractor.extract(tagData);
-
-		if (contextOrFlags.context() != null) {
-			logger.debug("Found parent tags, joining");
-			return tracer.newChild(contextOrFlags.context());
-		} else {
-			logger.debug("Starting new span, propagation details not found.");
-			return tracer.newTrace(contextOrFlags.samplingFlags());
-		}
-
-	}
-
-	public void setConfig(AbstractConfig config) {
-		this.config = config;
-	}
-
-	public void setMuleContext(MuleContext muleContext) {
-		this.muleContext = muleContext;
+		span.start().flush();
 	}
 
 	public AbstractConfig getConfig() {
 		return config;
 	}
 
+	public void setConfig(AbstractConfig config) {
+		this.config = config;
+	}
+
+	public MuleContext getMuleContext() {
+		return muleContext;
+	}
+
+	public void setMuleContext(MuleContext muleContext) {
+		this.muleContext = muleContext;
+	}
 }
