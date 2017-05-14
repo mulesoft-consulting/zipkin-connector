@@ -1,11 +1,11 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
-import static org.junit.Assert.*;
-import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
+
+import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
 
 public class FinishSpanTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
 
@@ -23,11 +23,10 @@ public class FinishSpanTestCases extends AbstractTestCase<ZipkinLoggerConnector>
 		// TODO
 	}
 
-	@Test
+	@Test(expected = RuntimeException.class)
 	public void verify() {
-		java.lang.String expected = null;
-		java.lang.String expressionToGetSpanId = null;
-		assertEquals(getConnector().finishSpan(expressionToGetSpanId), expected);
+
+		getConnector().finishSpan("1231231");
 	}
 
 }

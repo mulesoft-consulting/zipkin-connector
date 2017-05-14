@@ -1,11 +1,17 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
-import static org.junit.Assert.*;
-import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
+
+import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+
+import brave.Span;
+import brave.Span.Kind;
 
 public class JoinExternalSpanAsyncTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
 
@@ -25,18 +31,33 @@ public class JoinExternalSpanAsyncTestCases extends AbstractTestCase<ZipkinLogge
 
 	@Test
 	public void verify() {
-		java.lang.String expected = null;
-		java.lang.String logMessage = null;
-		java.util.Map<java.lang.String, java.lang.String> additionalTags = null;
-		brave.Span.Kind ServerOrClientSpanType = null;
-		java.lang.String spanName = null;
-		java.lang.String spanId = null;
-		java.lang.String parentSpanId = null;
-		java.lang.String traceId = null;
-		java.lang.String sampled = null;
-		java.lang.String flags = null;
-		assertEquals(getConnector().joinExternalSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				spanId, parentSpanId, traceId, sampled, flags), expected);
+
+		String logMessage = "test log message";
+
+		Map<String, String> additionalTags = new HashMap<String, String>();
+		additionalTags.put("teet", "terer");
+
+		Kind ServerOrClientSpanType = Kind.SERVER;
+		String spanName = "span1";
+		String flowVariableToSetWithId = "test";
+		String traceName = "mytrace";
+
+		getConnector().createNewTrace(null, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				flowVariableToSetWithId, traceName);
+
+		Span span1 = getConnector().getSpansInFlight().values().iterator().next();
+
+		String spanId1 = Long.toHexString(span1.context().spanId());
+
+		brave.Span.Kind ServerOrClientSpanType1 = Kind.CLIENT;
+		java.lang.String spanName1 = "another";
+		java.lang.String traceId = Long.toHexString(span1.context().traceId());
+		java.lang.String sampled = span1.context().sampled() ? "1" : "0";
+		java.lang.String flags = span1.context().debug() ? "1" : "0";
+		getConnector().joinExternalSpanAsync(logMessage, additionalTags, ServerOrClientSpanType1, spanName1, spanId1,
+				spanId1, traceId, sampled, flags);
+
+		getConnector().finishSpan(spanId1);
 	}
 
 }

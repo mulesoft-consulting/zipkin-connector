@@ -1,11 +1,16 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
-import static org.junit.Assert.*;
-import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
+
+import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+
+import brave.Span.Kind;
 
 public class CreateNewTraceAsyncTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
 
@@ -25,14 +30,15 @@ public class CreateNewTraceAsyncTestCases extends AbstractTestCase<ZipkinLoggerC
 
 	@Test
 	public void verify() {
-		java.lang.String expected = null;
-		java.lang.String logMessage = null;
-		java.util.Map<java.lang.String, java.lang.String> additionalTags = null;
-		brave.Span.Kind ServerOrClientSpanType = null;
-		java.lang.String spanName = null;
-		java.lang.String traceName = null;
-		assertEquals(getConnector().createNewTraceAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				traceName), expected);
+		String logMessage = "test log message";
+
+		Map<String, String> additionalTags = new HashMap<String, String>();
+
+		Kind ServerOrClientSpanType = Kind.SERVER;
+		String spanName = "span1";
+		String traceName = "mytrace";
+
+		getConnector().createNewTraceAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, traceName);
 	}
 
 }
