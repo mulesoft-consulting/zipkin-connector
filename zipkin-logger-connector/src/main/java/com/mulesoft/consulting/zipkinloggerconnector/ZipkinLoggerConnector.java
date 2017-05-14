@@ -6,7 +6,6 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.mule.api.MuleContext;
-import org.mule.api.MuleEvent;
 import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
@@ -64,21 +63,19 @@ public class ZipkinLoggerConnector {
 	private static Logger logger = LoggerFactory.getLogger(ZipkinLoggerConnector.class);
 
 	@Processor
-	public SpanData createNewTrace(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public SpanData createNewTrace(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
-			@Default(value = "newSpanId") String flowVariableToSetWithId,
 			@Default(value = "mytrace") String traceName) {
 
 		brave.Span span = tracer.newTrace().name(traceName);
 
-		return startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, span);
+		return startSpan(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 
 	}
 
 	@Processor
-	public SpanData joinSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public SpanData joinSpan(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "newSpanId") String flowVariableToSetWithId,
@@ -96,13 +93,13 @@ public class ZipkinLoggerConnector {
 		Boolean nullableSampled = parentSpan.context().sampled();
 		Boolean debug = parentSpan.context().debug();
 
-		return createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+		return createAndStartSpanWithParent(logMessage, additionalTags, ServerOrClientSpanType, spanName,
 				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
 
 	@Processor
-	public SpanData joinExternalSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public SpanData joinExternalSpan(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "spanId") String flowVariableToSetWithId,
@@ -128,7 +125,7 @@ public class ZipkinLoggerConnector {
 			if (flags.equals("1"))
 				debug = true;
 
-		return createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+		return createAndStartSpanWithParent(logMessage, additionalTags, ServerOrClientSpanType, spanName,
 				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
@@ -278,7 +275,7 @@ public class ZipkinLoggerConnector {
 		return registry.get(SPANS_IN_FLIGHT_KEY);
 	}
 
-	private SpanData createAndStartSpanWithParent(MuleEvent muleEvent, String logMessage,
+	private SpanData createAndStartSpanWithParent(String logMessage,
 			Map<String, String> additionalTags, Kind ServerOrClientSpanType, String spanName,
 			String flowVariableToSetWithId, Long parentIdLong, long spanIdLong, long traceIdLong,
 			Boolean nullableSampled, Boolean debug) {
@@ -288,12 +285,11 @@ public class ZipkinLoggerConnector {
 
 		brave.Span span = tracer.newChild(parent);
 
-		return startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, span);
+		return startSpan(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 	}
 
-	private SpanData startSpan(MuleEvent muleEvent, String logMessage, Map<String, String> additionalTags,
-			Kind ServerOrClientSpanType, String spanName, String flowVariableToSetWithId, brave.Span span) {
+	private SpanData startSpan(String logMessage, Map<String, String> additionalTags,
+			Kind ServerOrClientSpanType, String spanName, brave.Span span) {
 
 		span.name(spanName).kind(ServerOrClientSpanType);
 
