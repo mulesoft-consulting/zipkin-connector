@@ -1,6 +1,5 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.After;
@@ -34,7 +33,7 @@ public class CreateNewTraceTestCases extends AbstractTestCase<ZipkinLoggerConnec
 
 		String logMessage = "test log message";
 
-		Map<String, String> additionalTags = new HashMap<String, String>();
+		Map<String, String> additionalTags = null;
 
 		Kind ServerOrClientSpanType = Kind.SERVER;
 		String spanName = "span1";

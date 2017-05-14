@@ -300,9 +300,10 @@ public class ZipkinLoggerConnector {
 		if (logMessage != null && !logMessage.equals(""))
 			span.tag(LOGGER_KEY, logMessage);
 
-		for (String key : additionalTags.keySet()) {
-			span.tag(key, additionalTags.get(key));
-		}
+		if (additionalTags != null)
+			for (String key : additionalTags.keySet()) {
+				span.tag(key, additionalTags.get(key));
+			}
 
 		String newSpanId = Long.toHexString(span.context().spanId());
 
