@@ -10,59 +10,51 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" connectionIdleTimeout="3000000"/>
-    <http:request-config name="HTTP_Request_Configuration"  host="google.com" port="80" basePath="/" doc:name="HTTP Request Configuration" connectionIdleTimeout="3000000"/>
-    <zipkin-logger:http-config name="Zipkin_Logger__ZipkinHTTPConfiguration" doc:name="Zipkin Logger: ZipkinHTTPConfiguration" serviceName="my-polling-client"/>
-    <zipkin-logger:console-config name="Zipkin_Logger__Zipkin_Console_Logging_Configuration" doc:name="Zipkin Logger: Zipkin Console Logging Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration"  host="yahoo.com" port="80" basePath="/" doc:name="HTTP Request Configuration" connectionIdleTimeout="3000000"/>
     <http:request-config name="HTTP_Request_Configuration1" host="localhost" port="8081" basePath="/" doc:name="HTTP Request Configuration"/>
-    <zipkin-logger:http-config name="Zipkin_Logger__ZipkinHTTPConfiguration1" serviceName="my-proxy-service" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
-    <zipkin-logger:http-config name="Zipkin_Logger__ZipkinHTTPConfiguration2" serviceName="google-proxy" doc:name="Zipkin Logger: ZipkinHTTPConfiguration"/>
+    <zipkin-logger:console-config name="Zipkin_Logger__Zipkin_Console_Logging_Configuration" serviceName="my-service-1" doc:name="Zipkin Logger: Zipkin Console Logging Configuration"/>
     <flow name="Polling-client-flow">
         <poll doc:name="Poll">
             <fixed-frequency-scheduler frequency="10000"/>
             <logger message="Starting a call" level="INFO" doc:name="Logger"/>
         </poll>
-        <zipkin-logger:create-new-trace config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" logMessage="This is message 1" spanName="myspan1" traceName="mytrace1" doc:name="Start sync trace">
+        <zipkin-logger:create-new-trace config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" logMessage="This is message 1" spanName="myspan1" traceName="mytrace1" ServerOrClientSpanType="CLIENT" doc:name="Start sync trace">
             <zipkin-logger:additional-tags>
                 <zipkin-logger:additional-tag key="Entry">entry1</zipkin-logger:additional-tag>
                 <zipkin-logger:additional-tag key="Entry2">Entry2222</zipkin-logger:additional-tag>
             </zipkin-logger:additional-tags>
         </zipkin-logger:create-new-trace>
-        <zipkin-logger:finish-span config-ref="Zipkin_Logger__ZipkinHTTPConfiguration" expressionToGetSpanId="#[flowVars.newSpanId]" doc:name="Finish Zipkin span #1"/>
+        <message-properties-transformer doc:name="Map Zipkin properties into HTTP">
+            <add-message-property key="x-b3-parentspanid" value="#[flowVars.newSpanId]"/>
+            <add-message-property key="x-b3-traceid" value="#[flowVars.newSpanId]"/>
+            <add-message-property key="x-b3-sampled" value="1"/>
+            <add-message-property key="x-b3-spanid" value="#[flowVars.newSpanId]"/>
+        </message-properties-transformer>
+        <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP client">
+            <http:success-status-code-validator values="200,500,301"/>
+        </http:request>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" expressionToGetSpanId="#[flowVars.newSpanId]" doc:name="Finish Zipkin span #1"/>
     </flow>
     <flow name="Service-flow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
+        <zipkin-logger:join-external-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" flowVariableToSetWithId="spanId1" logMessage="This is the rythm of the night" spanName="myspan2" doc:name="Join external trace">
+            <zipkin-logger:additional-tags>
+                <zipkin-logger:additional-tag key="Entrar">Travajo</zipkin-logger:additional-tag>
+            </zipkin-logger:additional-tags>
+        </zipkin-logger:join-external-span>
         <flow-ref name="zipkin-logger-google-proxy-subflow" doc:name="zipkin-logger-google-proxy-subflow"/>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" expressionToGetSpanId="#[flowVars.spanId1]" doc:name="Finish Zipkin span #2"/>
         <set-payload value="{&quot;result&quot;: &quot;success&quot;}" doc:name="Set Response Payload"/>
     </flow>
     <sub-flow name="zipkin-logger-google-proxy-subflow">
-        <dw:transform-message doc:name="Prepare Zipkin message">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/java
----
-{
-	loggerTags: [{
-		key: "Message",
-		value: "Server calls another client"
-	}],
-	traceData: {
-		debug: payload.debug,
-		parentSpanId: payload.parentSpanId,
-		sampled: payload.sampled,
-		spanId: payload.spanId,
-		traceId: payload.traceId
-	}
-} as :object {
-	class : "com.mulesoft.consulting.zipkinloggerconnector.model.LoggerData"
-}
-]]></dw:set-payload>
-        </dw:transform-message>
-        <message-properties-transformer doc:name="Propagate Zipkin properties">
-            <add-message-property key="X-B3-Debug" value="#[payload.debug]"/>
-            <add-message-property key="X-B3-ParentSpanId" value="#[payload.parentSpanId]"/>
-            <add-message-property key="X-B3-TraceId" value="#[payload.traceId]"/>
-            <add-message-property key="X-B3-SpanId" value="#[payload.spanId]"/>
-            <add-message-property key="X-B3-Sampled" value="#[payload.sampled]"/>
-        </message-properties-transformer>
-        <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP"/>
+        <zipkin-logger:join-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" flowVariableToSetWithId="spanId2" logMessage="Boom boom boom boom" parentSpanId="#[flowVars.spanId1]" spanName="myspan3" ServerOrClientSpanType="CLIENT" doc:name="Join internal trace">
+            <zipkin-logger:additional-tags>
+                <zipkin-logger:additional-tag key="Entry">jjj</zipkin-logger:additional-tag>
+            </zipkin-logger:additional-tags>
+        </zipkin-logger:join-span>
+        <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" followRedirects="false" parseResponse="false" doc:name="HTTP">
+            <http:success-status-code-validator values="200,301,500"/>
+        </http:request>
+        <zipkin-logger:finish-span config-ref="Zipkin_Logger__Zipkin_Console_Logging_Configuration" expressionToGetSpanId="#[flowVars.spanId2]" doc:name="Finish Zipkin Span #3"/>
     </sub-flow>
 </mule>
