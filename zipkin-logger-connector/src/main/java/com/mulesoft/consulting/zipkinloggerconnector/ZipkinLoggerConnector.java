@@ -13,6 +13,8 @@ import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
+import org.mule.api.registry.RegistrationException;
+import org.mule.api.registry.Registry;
 import org.mule.extension.annotations.param.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,8 @@ public class ZipkinLoggerConnector {
 
 	private static final String LOGGER_KEY = "log";
 
+	private static final String SPANS_IN_FLIGHT_KEY = "spansInFlight";
+
 	@Config
 	AbstractConfig config;
 
@@ -50,7 +54,9 @@ public class ZipkinLoggerConnector {
 	private AsyncReporter<Span> reporter = null;
 
 	private Tracer tracer;
-	private Map<String, brave.Span> spansInFlight = new HashMap<String, brave.Span>();
+
+	@Inject
+	Registry registry;
 
 	private String serviceName;
 
@@ -77,7 +83,7 @@ public class ZipkinLoggerConnector {
 			@Default(value = "newSpanId") String flowVariableToSetWithId,
 			@Default("#[flowVars.spanId]") String parentSpanId) {
 
-		brave.Span parentSpan = spansInFlight.get(parentSpanId);
+		brave.Span parentSpan = getSpansInFlight().get(parentSpanId);
 
 		if (parentSpan == null) {
 			throw new RuntimeException("Span " + parentSpanId + " not found");
@@ -129,7 +135,7 @@ public class ZipkinLoggerConnector {
 	@Processor
 	public void finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
 
-		brave.Span span = spansInFlight.remove(expressionToGetSpanId);
+		brave.Span span = getSpansInFlight().remove(expressionToGetSpanId);
 
 		if (span != null) {
 			span.finish();
@@ -157,7 +163,7 @@ public class ZipkinLoggerConnector {
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default("#[flowVars.spanId]") String parentSpanId) {
 
-		brave.Span parentSpan = spansInFlight.get(parentSpanId);
+		brave.Span parentSpan = getSpansInFlight().get(parentSpanId);
 
 		if (parentSpan == null) {
 			throw new RuntimeException("Span " + parentSpanId + " not found");
@@ -239,6 +245,14 @@ public class ZipkinLoggerConnector {
 		// Tracing exposes objects you might need, most importantly the
 		// tracer
 		tracer = tracing.tracer();
+
+		Map<String, brave.Span> spansInFlight = new HashMap<String, brave.Span>();
+
+		try {
+			registry.registerObject(SPANS_IN_FLIGHT_KEY, spansInFlight);
+		} catch (RegistrationException e) {
+			throw new RuntimeException("Unable to store spansInFlight map", e);
+		}
 	}
 
 	/*
@@ -259,7 +273,7 @@ public class ZipkinLoggerConnector {
 
 	@Processor
 	public Map<String, brave.Span> getSpansInFlight() {
-		return spansInFlight;
+		return registry.get(SPANS_IN_FLIGHT_KEY);
 	}
 
 	private String createAndStartSpanWithParent(MuleEvent muleEvent, String logMessage,
@@ -300,7 +314,7 @@ public class ZipkinLoggerConnector {
 		muleEvent.setFlowVariable(flowVariableToSetWithId, newSpanId);
 
 		// Store span for future lookup
-		spansInFlight.put(newSpanId, span);
+		getSpansInFlight().put(newSpanId, span);
 		return newSpanId;
 	}
 
@@ -350,4 +364,9 @@ public class ZipkinLoggerConnector {
 	public void setMuleContext(MuleContext muleContext) {
 		this.muleContext = muleContext;
 	}
+
+	public void setRegistry(Registry registry) {
+		this.registry = registry;
+	}
+
 }
