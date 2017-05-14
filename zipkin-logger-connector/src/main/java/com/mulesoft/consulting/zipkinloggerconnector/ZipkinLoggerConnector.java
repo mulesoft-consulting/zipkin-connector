@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.mulesoft.consulting.zipkinloggerconnector.config.AbstractConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinConsoleConnectorConfig;
 import com.mulesoft.consulting.zipkinloggerconnector.config.ZipkinHttpConnectorConfig;
+import com.mulesoft.consulting.zipkinloggerconnector.model.SpanData;
 
 import brave.Span.Kind;
 import brave.Tracer;
@@ -63,7 +64,7 @@ public class ZipkinLoggerConnector {
 	private static Logger logger = LoggerFactory.getLogger(ZipkinLoggerConnector.class);
 
 	@Processor
-	public void createNewTrace(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public SpanData createNewTrace(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "newSpanId") String flowVariableToSetWithId,
@@ -71,13 +72,13 @@ public class ZipkinLoggerConnector {
 
 		brave.Span span = tracer.newTrace().name(traceName);
 
-		startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName, flowVariableToSetWithId,
-				span);
+		return startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				flowVariableToSetWithId, span);
 
 	}
 
 	@Processor
-	public void joinSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public SpanData joinSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "newSpanId") String flowVariableToSetWithId,
@@ -95,13 +96,13 @@ public class ZipkinLoggerConnector {
 		Boolean nullableSampled = parentSpan.context().sampled();
 		Boolean debug = parentSpan.context().debug();
 
-		createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+		return createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
 				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
 
 	@Processor
-	public void joinExternalSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
+	public SpanData joinExternalSpan(MuleEvent muleEvent, @Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "spanId") String flowVariableToSetWithId,
@@ -127,18 +128,19 @@ public class ZipkinLoggerConnector {
 			if (flags.equals("1"))
 				debug = true;
 
-		createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+		return createAndStartSpanWithParent(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
 				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
 
 	@Processor
-	public void finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
+	public SpanData finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
 
 		brave.Span span = getSpansInFlight().remove(expressionToGetSpanId);
 
 		if (span != null) {
 			span.finish();
+			return extractSpanData(span);
 		} else {
 			throw new RuntimeException("Span " + expressionToGetSpanId + " not found");
 		}
@@ -146,19 +148,19 @@ public class ZipkinLoggerConnector {
 	}
 
 	@Processor
-	public void createNewTraceAsync(@Optional @Default("#[]") String logMessage,
+	public SpanData createNewTraceAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default(value = "mytrace") String traceName) {
 
 		brave.Span span = tracer.newTrace().name(traceName);
 
-		startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
+		return startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 
 	}
 
 	@Processor
-	public void joinSpanAsync(@Optional @Default("#[]") String logMessage,
+	public SpanData joinSpanAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default("#[flowVars.spanId]") String parentSpanId) {
@@ -175,12 +177,12 @@ public class ZipkinLoggerConnector {
 		Boolean nullableSampled = parentSpan.context().sampled();
 		Boolean debug = parentSpan.context().debug();
 
-		createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
-				traceIdLong, nullableSampled, debug);
+		return createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong,
+				spanIdLong, traceIdLong, nullableSampled, debug);
 	}
 
 	@Processor
-	public void joinExternalSpanAsync(@Optional @Default("#[]") String logMessage,
+	public SpanData joinExternalSpanAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
 			@Default("#[message.inboundProperties.'x-b3-spanid']") String spanId,
@@ -205,31 +207,8 @@ public class ZipkinLoggerConnector {
 			if (flags.equals("1"))
 				debug = true;
 
-		createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong, spanIdLong,
-				traceIdLong, nullableSampled, debug);
-	}
-
-	@Processor
-	public void setMuleMessageProperties(MuleEvent muleEvent, @Default("#[flowVars.spanId]") String spanIdToRetrieve,
-			@Default("x-b3-spanid") String spanIdPropertyName,
-			@Default("x-b3-parentspanid") String parentSpanIdPropertyName,
-			@Default("x-b3-traceid") String traceIdPropertyName, @Default("x-b3-sampled") String sampledPropertyName,
-			@Default("x-b3-flags") String flagsPropertyName) {
-
-		brave.Span span = getSpansInFlight().get(spanIdToRetrieve);
-
-		if (span == null) {
-			throw new RuntimeException("Span " + spanIdToRetrieve + " not found");
-		}
-
-		String sampled = span.context().sampled() != null ? (span.context().sampled() ? "1" : "0") : null;
-
-		muleEvent.getMessage().setOutboundProperty(spanIdPropertyName, Long.toHexString(span.context().spanId()));
-		muleEvent.getMessage().setOutboundProperty(parentSpanIdPropertyName, span.context().parentId() != null
-				? Long.toHexString(span.context().parentId()) : Long.toHexString(span.context().spanId()));
-		muleEvent.getMessage().setOutboundProperty(traceIdPropertyName, Long.toHexString(span.context().traceId()));
-		muleEvent.getMessage().setOutboundProperty(sampledPropertyName, sampled);
-		muleEvent.getMessage().setOutboundProperty(flagsPropertyName, span.context().debug() ? "1" : "0");
+		return createAndStartSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong,
+				spanIdLong, traceIdLong, nullableSampled, debug);
 	}
 
 	/*
@@ -299,7 +278,7 @@ public class ZipkinLoggerConnector {
 		return registry.get(SPANS_IN_FLIGHT_KEY);
 	}
 
-	private String createAndStartSpanWithParent(MuleEvent muleEvent, String logMessage,
+	private SpanData createAndStartSpanWithParent(MuleEvent muleEvent, String logMessage,
 			Map<String, String> additionalTags, Kind ServerOrClientSpanType, String spanName,
 			String flowVariableToSetWithId, Long parentIdLong, long spanIdLong, long traceIdLong,
 			Boolean nullableSampled, Boolean debug) {
@@ -309,12 +288,11 @@ public class ZipkinLoggerConnector {
 
 		brave.Span span = tracer.newChild(parent);
 
-		String newSpanId = startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
+		return startSpan(muleEvent, logMessage, additionalTags, ServerOrClientSpanType, spanName,
 				flowVariableToSetWithId, span);
-		return newSpanId;
 	}
 
-	private String startSpan(MuleEvent muleEvent, String logMessage, Map<String, String> additionalTags,
+	private SpanData startSpan(MuleEvent muleEvent, String logMessage, Map<String, String> additionalTags,
 			Kind ServerOrClientSpanType, String spanName, String flowVariableToSetWithId, brave.Span span) {
 
 		span.name(spanName).kind(ServerOrClientSpanType);
@@ -334,15 +312,24 @@ public class ZipkinLoggerConnector {
 
 		span.start();
 
-		// Set the flowVar with created spanId
-		muleEvent.setFlowVariable(flowVariableToSetWithId, newSpanId);
-
 		// Store span for future lookup
 		getSpansInFlight().put(newSpanId, span);
-		return newSpanId;
+
+		return extractSpanData(span);
 	}
 
-	private String createAndStartSpanAsync(String logMessage, Map<String, String> additionalTags,
+	private SpanData extractSpanData(brave.Span span) {
+
+		String spanId = Long.toHexString(span.context().spanId());
+		String parentSpanId = span.context().parentId() != null ? Long.toHexString(span.context().parentId())
+				: Long.toHexString(span.context().spanId());
+		String traceId = Long.toHexString(span.context().traceId());
+		String sampled = span.context().sampled() != null ? (span.context().sampled() ? "1" : "0") : null;
+		String flags = span.context().debug() ? "1" : "0";
+		return new SpanData(spanId, parentSpanId, traceId, sampled, flags);
+	}
+
+	private SpanData createAndStartSpanAsync(String logMessage, Map<String, String> additionalTags,
 			Kind ServerOrClientSpanType, String spanName, Long parentIdLong, long spanIdLong, long traceIdLong,
 			Boolean nullableSampled, Boolean debug) {
 
@@ -354,7 +341,7 @@ public class ZipkinLoggerConnector {
 		return startSpanAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 	}
 
-	private String startSpanAsync(String logMessage, Map<String, String> additionalTags, Kind ServerOrClientSpanType,
+	private SpanData startSpanAsync(String logMessage, Map<String, String> additionalTags, Kind ServerOrClientSpanType,
 			String spanName, brave.Span span) {
 		span.name(spanName).kind(ServerOrClientSpanType);
 
@@ -370,7 +357,7 @@ public class ZipkinLoggerConnector {
 
 		span.start().flush();
 
-		return Long.toHexString(span.context().spanId());
+		return extractSpanData(span);
 	}
 
 	public AbstractConfig getConfig() {
