@@ -38,13 +38,10 @@ import zipkin.reporter.okhttp3.OkHttpSender;
  * the collection and lookup of this data. Zipkin’s design is based on the
  * Google Dapper paper. 
  * 
- * Useful links:
- * <pre>
- * * Zipkin - {@link http://zipkin.io/}
- * * Zipkin server - {@link https://github.com/openzipkin/zipkin}
- * * Brave Java client library - {@link https://github.com/openzipkin/brave}
- * * Dapper paper - {@link https://research.google.com/pubs/pub36356.html}
- * </pre>
+ * @see <a href="http://zipkin.io/">Zipkin</a>
+ * @see <a href="https://github.com/openzipkin/zipkin">Zipkin Github repo</a>
+ * @see <a href="https://github.com/openzipkin/brave">Zipkin brave Java client library</a>
+ * @see <a href="https://research.google.com/pubs/pub36356.html">Dapper paper</a>
  * 
  * @author michaelhyatt
  *

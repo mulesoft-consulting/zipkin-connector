@@ -4,7 +4,14 @@ import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.components.Configuration;
 import org.mule.api.annotations.param.Default;
 
-@Configuration(friendlyName = "Zipkin HTTP Logging Configuration", configElementName = "http-config")
+/*
+ * Connector configuration to log data into Zipkin server using HTTP
+ * 
+ * 
+ * @author michaelhyatt
+ * 
+ */
+@Configuration(friendlyName = "HTTP Configuration", configElementName = "http-config")
 public class ZipkinHttpConnectorConfig extends AbstractConfig {
 
 	/**

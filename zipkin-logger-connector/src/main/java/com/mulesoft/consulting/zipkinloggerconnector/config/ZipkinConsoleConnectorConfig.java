@@ -7,10 +7,11 @@ import org.mule.api.annotations.param.Default;
 /*
  * Zipkin connector configuration that logs spans to console. Useful for testing purposes.
  * 
+ * 
  * @author michaelhyatt
  * 
  */
-@Configuration(friendlyName = "Zipkin Console Logging Configuration", configElementName = "console-config")
+@Configuration(friendlyName = "Console Configuration", configElementName = "console-config")
 public class ZipkinConsoleConnectorConfig extends AbstractConfig {
 
 	/**
