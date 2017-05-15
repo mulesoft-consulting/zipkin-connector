@@ -9,11 +9,9 @@
           <string>__default__</string>
           <org.mule.tooling.metadata.cache.DefaultMetadataCacheEntry>
             <output class="org.mule.common.metadata.DefaultMetaData">
-              <payload class="org.mule.common.metadata.DefaultSimpleMetaDataModel">
-                <dataType>VOID</dataType>
-                <metaDataModelPropertiesManager>
-                  <properties/>
-                </metaDataModelPropertiesManager>
+              <payload class="org.mule.tooling.metadata.api.TypeRefMetaDataModel">
+                <connectorName>Zipkin_Logger__Zipkin_HTTP_Logging_Configuration</connectorName>
+                <typeId>com.mulesoft.consulting.zipkinloggerconnector.model.SpanData</typeId>
               </payload>
               <properties class="tree-map">
                 <entry>
