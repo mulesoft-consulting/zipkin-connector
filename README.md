@@ -128,10 +128,14 @@ Currently, there are two configuration options available: console and HTTP. Cons
 ```
 ## Installation
 ### Mule connector
+Open Anypoint Studio, go to Help → Install New Software and add Zipkin Logger Update Site. This will allow you to find the version to install. The update site is **https://github.com/mulesoft-consulting/zipkin-connector/tree/master/zipkin-logger-connector/target/update-site**
 
 ### Zipkin server
+Described in details [here](https://github.com/openzipkin/zipkin#quick-start).
 
 ## More information
-### Zipkin
-
-### Mule example
+ * [Zipkin](http://zipkin.io/)
+ * [Zipkin Github repo](https://github.com/openzipkin/zipkin)
+ * [Zipkin brave Java client library](https://github.com/openzipkin/brave)
+ * [Dapper paper](https://research.google.com/pubs/pub36356.html)
+ * [Mule example](zipkin-logger-example)
