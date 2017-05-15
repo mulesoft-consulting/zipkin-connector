@@ -8,13 +8,13 @@ Zipkin connector integrates with [brave](https://github.com/openzipkin/brave) Ja
 
 ## Terminology
 ### Span
-Span is a single measurement. Synchronous spans have start timestamp and duration, asynchronous spans only have start (point in time) timestamp. Spans have various tags, names, ids, and can link to other spans as parents and children. Parent-child relationship between spans is indicated by `parentSpanId = spanId relationship`.
+Span is a single measurement. Synchronous (rpc) spans have start timestamp and duration, asynchronous (one-way) spans only have start (point in time) timestamp. Spans have various tags, names, ids, and can link to other spans as parents and children. Parent-child relationship between spans is indicated by `parentSpanId = spanId` relationship.
 
 ### Trace
-
-### Parent span
+Trace is a collection of spans interlinked between themselves using `parentSpanId = spanId` relationships. Trace represents an end to end call traced through a number of components and dependencies, each contributing spans to it. Top level span in a trace doesn't have a parentSpanId, but other traces linking to it and each other, have the `parentSpanId = spanId` relationships.
 
 ### CLIENT or SERVER?
+Traces are tagged differently, depending on whether it is a CLIENT or a SERVER sending or receiving a request. CLIENT indicates first sending a request, and then receiving a response. SERVER indicates the opposite, first, receiving a request, and then, sending the response. When a client sends a request, the trace annotation is timestamped with **cs** (client send) at the beginning of the trace, and with **cr** (client receive) at the end of the trace. When a server receives a request at the beginning of the span, it is timestamped with **sr** (server received) and at the end of the unit of work it is timestamped with **ss** (server send). The delta between pairs of **cs/cr**, and **sr/ss** is calculated as time delta of the span. Note, that asynchronous (one-way) spans only have one stamp - **cs** or **sr**, depending on the type of the span being CLIENT or SERVER.
 
 ### Log message and annotations
 
