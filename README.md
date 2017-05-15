@@ -7,6 +7,8 @@ Tracing data can be sent to [Zipkin server](https://github.com/openzipkin/zipkin
 Zipkin connector integrates with [brave](https://github.com/openzipkin/brave) Java library to create and manage trace data, and with other [Zipkin libraries](https://github.com/openzipkin) for connecting to reporting server.  
 
 ## Terminology
+For more detailed overview of the philosophy behind Zipkin, refer to [Google Dapper paper](https://research.google.com/pubs/pub36356.html).
+
 ### Span
 Span is a single measurement. Synchronous (rpc) spans have start timestamp and duration, asynchronous (one-way) spans only have start (point in time) timestamp. Spans have various tags, names, ids, and can link to other spans as parents and children. Parent-child relationship between spans is indicated by `parentSpanId = spanId` relationship.
 
@@ -26,8 +28,9 @@ When trace is originated outside of Mule component, it communicates the required
 When Mule creates a span that needs to join with another parent trace also managed by Mule, it is possible to specify the spanId of the active parent span during the creation of the child span. The connector then will retrieve all the required information about the parent span and will join the new child span to it using `parentSpanId = spanId` relationship.
 
 ### Synchronous vs. asynchronous spans
+Synchronous (rpc) spans need to be started and finished using two different activities in Mule flow. Synchronous spans indicate a time period with start and duration. Asynchronous (one-way) spans only have one timestamp indicating point in time event, and only need to be triggered using one activity.
 
-## Use cases
+## Use cases and examples
 ### Starting a trace
 
 ### Joining externally originated trace
