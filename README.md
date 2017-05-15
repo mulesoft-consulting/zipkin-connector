@@ -33,18 +33,19 @@ Synchronous (rpc) spans need to be started and finished using two different acti
 ## Use cases and examples
 ### Starting a trace
 ```xml
-		<zipkin-logger:create-new-trace
-			config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration"
-			logMessage="This is message 1" spanName="myspan1" traceName="mytrace1"
-			ServerOrClientSpanType="CLIENT" doc:name="Start sync trace">
-		</zipkin-logger:create-new-trace>
-    <!-- store SpanData in a flowVar -->
-		<set-variable variableName="newSpanId" value="#[payload]"
-			doc:name="Save payload with SpanData in a flowVar" />
+	<zipkin-logger:create-new-trace
+		config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration"
+		logMessage="This is message 1" spanName="myspan1" traceName="mytrace1"
+		ServerOrClientSpanType="CLIENT" doc:name="Start sync trace">
+	</zipkin-logger:create-new-trace>
+	<!-- store SpanData in a flowVar -->
+	<set-variable variableName="newSpanId" value="#[payload]"
+		doc:name="Save payload with SpanData in a flowVar" />
 ...Do some stuff...
-		<zipkin-logger:finish-span
-			config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration"
-			expressionToGetSpanId="#[flowVars.newSpanId.spanId]" doc:name="Finish Zipkin span #1" />
+	<zipkin-logger:finish-span
+		config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration"
+		expressionToGetSpanId="#[flowVars.newSpanId.spanId]"
+		doc:name="Finish Zipkin span #1" />
 ```
 
 ### Joining externally originated trace
