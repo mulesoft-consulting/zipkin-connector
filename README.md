@@ -47,14 +47,35 @@ Synchronous (rpc) spans need to be started and finished using two different acti
 		expressionToGetSpanId="#[flowVars.newSpanId.spanId]"
 		doc:name="Finish Zipkin span #1" />
 ```
-
 ### Joining externally originated trace
-
+Mapping propagation data from message properties, using message enricher to store SpanData in flowVar and providing additional tags.
+```xml
+	<enricher target="#[variable:spanId1]" doc:name="Message Enricher">
+		<zipkin-logger:join-external-span
+			config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1"
+			logMessage="This is log message" spanName="myspan2"
+			doc:name="Join external trace" 
+			flags="#[message.inboundProperties.'x-b3-flags']"
+			parentSpanId="#[message.inboundProperties.'x-b3-parentspanid']"
+			sampled="#[message.inboundProperties.'x-b3-sampled']" 
+			spanId="#[message.inboundProperties.'x-b3-spanid']"
+			traceId="#[message.inboundProperties.'x-b3-traceid']">
+			<zipkin-logger:additional-tags>
+				<zipkin-logger:additional-tag key="entry">Work</zipkin-logger:additional-tag>
+			</zipkin-logger:additional-tags>
+		</zipkin-logger:join-external-span>
+	</enricher>
+...Do some work...
+	<zipkin-logger:finish-span
+		config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1"
+		expressionToGetSpanId="#[flowVars.spanId1.spanId]" doc:name="Finish Zipkin span #2" />
+```
 ### Joining internally originated trace
 
 ### Joining a trace with asynchronous trace
 
 ### Sending trace propagation data to HTTP endpoint
+Note the mapping of `spanId` into `x-b3-parentspanId` that indicates top level span in a trace mapping.
 ```xml
 	<!-- Map parent span details propagation into X-B3 HTTP headers -->
 	<message-properties-transformer doc:name="Populate message headers with span data">
@@ -65,9 +86,8 @@ Synchronous (rpc) spans need to be started and finished using two different acti
 	</message-properties-transformer>
 	<http:request config-ref="HTTP_Request_Configuration1"
 		path="/" method="GET" followRedirects="false" parseResponse="false"
-		doc:name="HTTP client">
+		doc:name="HTTP client" />
 ```
-
 ### Creating asynchronous trace
 
 ## Configuration
