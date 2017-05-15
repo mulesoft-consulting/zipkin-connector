@@ -121,10 +121,12 @@ Currently, there are two configuration options available: console and HTTP. Cons
 		serviceName="my-service-1" doc:name="Zipkin Logger: Zipkin Console Logging Configuration" />
 	<zipkin-logger:http-config
 		name="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration2" serviceName="my-service-2"
-		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration" />
+		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration"
+		zipkinUrl="http://127.0.0.1:9411/api/v1/spans"/>
 	<zipkin-logger:http-config
 		name="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1" serviceName="my-service-1"
-		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration" />		
+		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration"
+		zipkinUrl="http://127.0.0.1:9411/api/v1/spans"/>
 ```
 ## Installation
 ### Mule connector
