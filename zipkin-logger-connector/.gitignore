@@ -1,2 +1,4 @@
 /target/
+!/target/update-site/
+!/target/apidocs/
 /.apt_generated/
