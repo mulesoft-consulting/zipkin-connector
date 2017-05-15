@@ -1,17 +1,17 @@
 # ZipkinLogger Release Notes
 # --------------------------------------------------------------------
-# Date: <DD-MMM-YYYY>
-Example: 24-Jan-2015
-# Version: (default value: 0.1)
+# Date: 15-May-2017
+# Version: 1.0
 # Supported API versions: 
-Example: Salesforce Bulk API v.28, SOAP API V.28 (include links to API docs)
+Zipkin Brave 4.7.0, Zipkin reporter 0.7.1
+
 # Supported Mule Runtime Versions: 
 ${project.devkitVersion}
+
 # New Features and Functionality
 (default value: Initial version) 
-Example: Added support for Query. http://github.com/mulesoft/zipkin-logger/issues/61
+Initial version
+
 # Closed Issues in this release 
-(include issue link when possible)
-Example: Fixed problem with lost telefone on Bulk Update (CLDCONNECT-123).
+
 # Known Issues in this release
-Example: Session ID expires after  30 days. http://github.com/mulesoft/zipkin-logger/issues/62

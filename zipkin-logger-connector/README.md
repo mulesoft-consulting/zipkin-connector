@@ -1,23 +1,16 @@
 # ZipkinLogger Anypoint Connector
-
-[Connector description including destination service or application with]
+Mule connector to enable Zipkin logging and tracing. Zipkin is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the Google Dapper paper.
 
 # Mule supported versions
 Examples:
-Mule 3.4.x, 3.5.x
-Mule 3.4.1
+Mule 3.8.x and newer
 
-# [Destination service or application name] supported versions
-Example:
-Oracle E-Business Suite 12.1 and above.
+# Zipkin brave and zipkin reporter supported versions
+Brave 4.7.0
+Zipkin reporter 0.7.1
 
 #Service or application supported modules
-Example:
-Oracle CRM
-Oracle Financials
-or 
-Salesforce API v.24
-Salesforce Metadata API
+Zipkin server http://zipkin.io
 
 
 # Installation 
@@ -27,8 +20,7 @@ For released connectors you can download them from the update site in Anypoint S
 Open Anypoint Studio, go to Help → Install New Software and select Anypoint Connectors Update Site where you’ll find all avaliable connectors.
 
 #Usage
-For information about usage our documentation at http://github.com/mulesoft/zipkin-logger.
+For information about usage our documentation at http://github.com/mulesoft-consulting/zipkin-logger.
 
 # Reporting Issues
-
-We use GitHub:Issues for tracking issues with this connector. You can report new issues at this link http://github.com/mulesoft/zipkin-logger/issues.
+We use GitHub:Issues for tracking issues with this connector. You can report new issues at this link http://github.com/mulesoft-consulting/zipkin-logger/issues.
