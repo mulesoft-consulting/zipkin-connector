@@ -17,10 +17,13 @@ Trace is a collection of spans interlinked between themselves using `parentSpanI
 Traces are tagged differently, depending on whether it is a CLIENT or a SERVER sending or receiving a request. CLIENT indicates first sending a request, and then receiving a response. SERVER indicates the opposite, first, receiving a request, and then, sending the response. When a client sends a request, the trace annotation is timestamped with **cs** (client send) at the beginning of the trace, and with **cr** (client receive) at the end of the trace. When a server receives a request at the beginning of the span, it is timestamped with **sr** (server received) and at the end of the unit of work it is timestamped with **ss** (server send). The delta between pairs of **cs/cr**, and **sr/ss** is calculated as time delta of the span. Note, that asynchronous (one-way) spans only have one stamp - **cs** or **sr**, depending on the type of the span being CLIENT or SERVER.
 
 ### Log message and annotations
+Connector can create log messages (`log` tag) to add logging text to the spans, as well as receive additional tags represented as key/value Map. This allows annotating the spans with custom log information.
 
 ### Joining external trace
+When trace is originated outside of Mule component, it communicates the required parameters needed for Mule spans to be able to join the trace. With HTTP, it will follow the [B3 propagation rules](https://github.com/openzipkin/b3-propagation), which can be mapped in Mule into the required fields in the connector activity.
 
 ### Joining internal trace
+When Mule creates a span that needs to join with another parent trace also managed by Mule, it is possible to specify the spanId of the active parent span during the creation of the child span. The connector then will retrieve all the required information about the parent span and will join the new child span to it using `parentSpanId = spanId` relationship.
 
 ### Synchronous vs. asynchronous spans
 
