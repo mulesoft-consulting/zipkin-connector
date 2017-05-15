@@ -2,4 +2,6 @@
 /target/*
 !/target/update-site/
 !/target/apidocs/
+!/target/*.zip
+!/target/*.jar
 /.apt_generated/
