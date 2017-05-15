@@ -1,0 +1,558 @@
+
+:toc:               left
+:toc-title:         Connector Summary
+:toclevels:         2
+:last-update-label!:
+:docinfo:
+:source-highlighter: coderay
+:icons: font
+
+
+= Zipkin Logger Connector API Reference
+
++++
+Zipkin is a distributed tracing system. It helps gather timing data needed to
+troubleshoot latency problems in microservice architectures. It manages both
+the collection and lookup of this data. Zipkin’s design is based on the
+Google Dapper paper.
++++
+
+*Additional Info*
+[width="50", cols=".<60%,^40%" ]
+|======================
+| Requires Mule Enterprise License |  No icon:remove[]  {nbsp}
+| Requires Entitlement |  No icon:remove[]  {nbsp}
+| Mule Version | 3.8.0 or higher
+|======================
+
+
+== Configs
+---
+=== Console Configuration
+`<zipkin-logger:console-config>`
+
+
+
+`Configuration` 
+
+
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+| Name | Java Type | Description | Default Value | Required
+|name | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | The name of this configuration. With this name can be later referenced. | | *x*{nbsp}
+| serviceName | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Service name to be sent to Zipkin+++ |  my-service | {nbsp}
+|======================
+---
+=== HTTP Configuration
+`<zipkin-logger:http-config>`
+
+
+
+`Configuration` 
+
+
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+| Name | Java Type | Description | Default Value | Required
+|name | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | The name of this configuration. With this name can be later referenced. | | *x*{nbsp}
+| zipkinUrl | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Zipkin URL
+Example:
+<pre>
+http://127.0.0.1:9411/api/v1/spans
+</pre>+++ |  http://127.0.0.1:9411/api/v1/spans | {nbsp}
+| serviceName | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Service name to be sent to Zipkin+++ |  my-service | {nbsp}
+|======================
+
+
+
+== Processors
+
+---
+
+=== Create new trace
+`<zipkin-logger:create-new-trace>`
+
+
+
+
++++
+Creates new synchronous trace and new parent span. Requires subsequent
+finish-span element to complete and publish the trace.
++++
+
+
+    
+                    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+logMessage  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Logged message that will be added as one of the tags with name "log"+++ | #[] | {nbsp}
+
+
+
+
+| 
+additionalTags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/util/Map.html">Map</a><<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>,<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>>+++ | +++additional map of tags to add as Map+++ | #[] | {nbsp}
+
+
+
+
+| 
+ServerOrClientSpanType  | +++Kind+++ | +++indicator whether the span is logged as SERVER or CLIENT brave.span.Kind+++ | SERVER | {nbsp}
+
+
+
+
+| 
+spanName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the span+++ | myspan | {nbsp}
+
+
+
+
+| 
+traceName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the trace+++ | mytrace | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+---
+
+=== Join span
+`<zipkin-logger:join-span>`
+
+
+
+
++++
+Creates new span and adds it to the internally managed parent span that
+has to exist. Requires subsequent finish-span element to complete
+and publish the trace.
++++
+
+
+    
+                    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+logMessage  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Logged message that will be added as one of the tags with name "log"+++ | #[] | {nbsp}
+
+
+
+
+| 
+additionalTags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/util/Map.html">Map</a><<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>,<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>>+++ | +++additional map of tags to add as Map+++ | #[] | {nbsp}
+
+
+
+
+| 
+ServerOrClientSpanType  | +++Kind+++ | +++indicator whether the span is logged as SERVER or CLIENT brave.span.Kind+++ | SERVER | {nbsp}
+
+
+
+
+| 
+spanName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the span+++ | myspan | {nbsp}
+
+
+
+
+| 
+parentSpanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++spanId of the internally managed span to join+++ | #[flowVars.spanId] | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+---
+
+=== Join external span
+`<zipkin-logger:join-external-span>`
+
+
+
+
++++
+Creates new span and adds it to the externally originated parent span
+known through its B3 propagation attributes. Requires subsequent
+finish-span element to complete and publish the trace.
++++
+
+
+    
+                                    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+logMessage  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Logged message that will be added as one of the tags with name "log"+++ | #[] | {nbsp}
+
+
+
+
+| 
+additionalTags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/util/Map.html">Map</a><<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>,<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>>+++ | +++additional map of tags to add as Map+++ | #[] | {nbsp}
+
+
+
+
+| 
+ServerOrClientSpanType  | +++Kind+++ | +++indicator whether the span is logged as SERVER or CLIENT brave.span.Kind+++ | SERVER | {nbsp}
+
+
+
+
+| 
+spanName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the span+++ | myspan | {nbsp}
+
+
+
+
+| 
+spanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++spanId of external span to join+++ | #[message.inboundProperties.'x-b3-spanid'] | {nbsp}
+
+
+
+
+| 
+parentSpanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++parentSpanId of external span to join+++ | #[message.inboundProperties.'x-b3-parentspanid'] | {nbsp}
+
+
+
+
+| 
+traceId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++traceId of external span to join+++ | #[message.inboundProperties.'x-b3-traceid'] | {nbsp}
+
+
+
+
+| 
+sampled  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++sampled value ("1" or "0") of external span to join+++ | #[message.inboundProperties.'x-b3-sampled'] | {nbsp}
+
+
+
+
+| 
+flags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++flags (debug - "1" or "0") of external span to join+++ | #[message.inboundProperties.'x-b3-flags'] | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+---
+
+=== Finish span
+`<zipkin-logger:finish-span>`
+
+
+
+
++++
+Finishes an internally managed synchronous span known by its spanId
++++
+
+
+    
+    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+expressionToGetSpanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++spanId of internally managed span (not async) to finish+++ | #[flowVars.spanId] | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+---
+
+=== Create new trace async
+`<zipkin-logger:create-new-trace-async>`
+
+
+
+
++++
+Creates new trace and an asynchronous span. The trace and the span are
+submitted immediately without the need for subsequent finish-span
+element.
++++
+
+
+    
+                    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+logMessage  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Logged message that will be added as one of the tags with name "log"+++ | #[] | {nbsp}
+
+
+
+
+| 
+additionalTags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/util/Map.html">Map</a><<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>,<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>>+++ | +++additional map of tags to add as Map+++ | #[] | {nbsp}
+
+
+
+
+| 
+ServerOrClientSpanType  | +++Kind+++ | +++indicator whether the span is logged as SERVER or CLIENT brave.span.Kind+++ | SERVER | {nbsp}
+
+
+
+
+| 
+spanName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the span+++ | myspan | {nbsp}
+
+
+
+
+| 
+traceName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the trace+++ | mytrace | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+---
+
+=== Join span async
+`<zipkin-logger:join-span-async>`
+
+
+
+
++++
+Creates new asynchronous span and adds it to the internally managed
+parent span that has to exist. The trace and the span are submitted
+immediately without the need for subsequent finish-span element.
++++
+
+
+    
+                    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+logMessage  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Logged message that will be added as one of the tags with name "log"+++ | #[] | {nbsp}
+
+
+
+
+| 
+additionalTags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/util/Map.html">Map</a><<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>,<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>>+++ | +++additional map of tags to add as Map+++ | #[] | {nbsp}
+
+
+
+
+| 
+ServerOrClientSpanType  | +++Kind+++ | +++indicator whether the span is logged as SERVER or CLIENT brave.span.Kind+++ | SERVER | {nbsp}
+
+
+
+
+| 
+spanName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the span+++ | myspan | {nbsp}
+
+
+
+
+| 
+parentSpanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++spanId of an internally managed parent span+++ | #[flowVars.spanId] | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+---
+
+=== Join external span async
+`<zipkin-logger:join-external-span-async>`
+
+
+
+
++++
+Creates new asynchronous span and adds it to the externally originated
+parent span that is sent using B3 proapgation attributes. The trace and
+the span are submitted immediately without the need for subsequent
+finish-span element.
++++
+
+
+    
+                                    
+==== Attributes
+[cols=".^20%,.^20%,.^35%,.^20%,^.^5%", options="header"]
+|======================
+|Name |Java Type | Description | Default Value | Required
+| config-ref | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | Specify which config to use | |*x*{nbsp}
+
+
+
+| 
+logMessage  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++Logged message that will be added as one of the tags with name "log"+++ | #[] | {nbsp}
+
+
+
+
+| 
+additionalTags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/util/Map.html">Map</a><<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>,<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>>+++ | +++additional map of tags to add as Map+++ | #[] | {nbsp}
+
+
+
+
+| 
+ServerOrClientSpanType  | +++Kind+++ | +++indicator whether the span is logged as SERVER or CLIENT brave.span.Kind+++ | SERVER | {nbsp}
+
+
+
+
+| 
+spanName  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++name of the span+++ | myspan | {nbsp}
+
+
+
+
+| 
+spanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++spanId of external span to join+++ | #[message.inboundProperties.'x-b3-spanid'] | {nbsp}
+
+
+
+
+| 
+parentSpanId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++parentSpanId of external span to join+++ | #[message.inboundProperties.'x-b3-parentspanid'] | {nbsp}
+
+
+
+
+| 
+traceId  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++traceId of external span to join+++ | #[message.inboundProperties.'x-b3-traceid'] | {nbsp}
+
+
+
+
+| 
+sampled  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++sampled value ("1" or "0") of external span to join+++ | #[message.inboundProperties.'x-b3-sampled'] | {nbsp}
+
+
+
+
+| 
+flags  | +++<a href="http://docs.oracle.com/javase/7/docs/api/java/lang/String.html">String</a>+++ | +++flags (debug - "1" or "0") of external span to join+++ | #[message.inboundProperties.'x-b3-flags'] | {nbsp}
+
+
+|======================
+
+==== Returns
+[cols=".^40%,.^60%", options="header"]
+|======================
+|Return Java Type | Description
+|+++<a href="javadocs/com/mulesoft/consulting/zipkinloggerconnector/model/SpanData.html">SpanData</a>+++ | +++payload with SpanData POJO+++
+|======================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
