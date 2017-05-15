@@ -71,9 +71,34 @@ Mapping propagation data from message properties, using message enricher to stor
 		expressionToGetSpanId="#[flowVars.spanId1.spanId]" doc:name="Finish Zipkin span #2" />
 ```
 ### Joining internally originated trace
-
+Passing parentSpanId as a reference to be linked to the current span as a parent.
+```xml
+	<enricher target="#[variable:spanId2]" doc:name="Message Enricher">
+		<zipkin-logger:join-span
+			config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration2"
+			logMessage="Boom boom boom" parentSpanId="#[flowVars.spanId1.spanId]"
+			spanName="myspan3" ServerOrClientSpanType="CLIENT" doc:name="Join internal trace">
+			<zipkin-logger:additional-tags>
+				<zipkin-logger:additional-tag key="Entry">jjj</zipkin-logger:additional-tag>
+			</zipkin-logger:additional-tags>
+		</zipkin-logger:join-span>
+	</enricher>
+...Do some work...
+	<zipkin-logger:finish-span
+		config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration2"
+		expressionToGetSpanId="#[flowVars.spanId2.spanId]" doc:name="Finish Zipkin Span #3" />
+```
 ### Joining a trace with asynchronous trace
-
+Just one activity without `finish-span` element. Similarly, it is possible to start new asynchronous trace, and join an externally originated trace (with X-B3 properties mapping).
+```xml
+	<zipkin-logger:join-span-async
+		config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration3"
+		logMessage="Async server" parentSpanId="#[flowVars.spanId2.spanId]"
+		spanName="myspan4" doc:name="Async server span">
+		<zipkin-logger:additional-tags>
+			<zipkin-logger:additional-tag key="Entry">call</zipkin-logger:additional-tag>
+		</zipkin-logger:additional-tags>
+```
 ### Sending trace propagation data to HTTP endpoint
 Note the mapping of `spanId` into `x-b3-parentspanId` that indicates top level span in a trace mapping.
 ```xml
@@ -88,10 +113,19 @@ Note the mapping of `spanId` into `x-b3-parentspanId` that indicates top level s
 		path="/" method="GET" followRedirects="false" parseResponse="false"
 		doc:name="HTTP client" />
 ```
-### Creating asynchronous trace
-
 ## Configuration
-
+Currently, there are two configuration options available: console and HTTP. Console option is only to be used for debugging purposes and not for production. Configuration also contains service name, so if the same Mule component implements multiple services, create multiple configurations, one per service. Examples:
+```xml
+	<zipkin-logger:console-config
+		name="Zipkin_Logger__Zipkin_Console_Logging_Configuration"
+		serviceName="my-service-1" doc:name="Zipkin Logger: Zipkin Console Logging Configuration" />
+	<zipkin-logger:http-config
+		name="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration2" serviceName="my-service-2"
+		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration" />
+	<zipkin-logger:http-config
+		name="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1" serviceName="my-service-1"
+		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration" />		
+```
 ## Installation
 ### Mule connector
 
