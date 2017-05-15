@@ -55,6 +55,18 @@ Synchronous (rpc) spans need to be started and finished using two different acti
 ### Joining a trace with asynchronous trace
 
 ### Sending trace propagation data to HTTP endpoint
+```xml
+	<!-- Map parent span details propagation into X-B3 HTTP headers -->
+	<message-properties-transformer doc:name="Populate message headers with span data">
+		<add-message-property key="x-b3-sampled" value="#[payload.sampled]" />
+		<add-message-property key="x-b3-traceid" value="#[payload.traceId]" />
+		<add-message-property key="x-b3-spanid" value="#[payload.spanId]" />
+		<add-message-property key="x-b3-parentspanId" value="#[payload.spanId]" />
+	</message-properties-transformer>
+	<http:request config-ref="HTTP_Request_Configuration1"
+		path="/" method="GET" followRedirects="false" parseResponse="false"
+		doc:name="HTTP client">
+```
 
 ### Creating asynchronous trace
 
