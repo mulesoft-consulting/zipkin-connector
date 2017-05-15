@@ -33,31 +33,59 @@ import zipkin.reporter.Reporter;
 import zipkin.reporter.okhttp3.OkHttpSender;
 
 /**
+ * Zipkin is a distributed tracing system. It helps gather timing data needed to
+ * troubleshoot latency problems in microservice architectures. It manages both
+ * the collection and lookup of this data. Zipkin’s design is based on the
+ * Google Dapper paper. 
+ * 
+ * Useful links:
+ * <pre>
+ * * Zipkin - {@link http://zipkin.io/}
+ * * Zipkin server - {@link https://github.com/openzipkin/zipkin}
+ * * Brave Java client library - {@link https://github.com/openzipkin/brave}
+ * * Dapper paper - {@link https://research.google.com/pubs/pub36356.html}
+ * </pre>
+ * 
  * @author michaelhyatt
  *
  */
-@Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger")
+@Connector(name = "zipkin-logger", friendlyName = "Zipkin Logger", minMuleVersion = "3.8.0")
 public class ZipkinLoggerConnector {
-
-	private static final String LOGGER_KEY = "log";
-
-	private static final String SPANS_IN_FLIGHT_KEY = "spansInFlight";
 
 	@Config
 	AbstractConfig config;
 
-	private Tracing tracing;
-	private AsyncReporter<Span> reporter = null;
-
-	private Tracer tracer;
-
 	@Inject
 	Registry registry;
 
-	private String serviceName;
+	private static final String LOGGER_KEY = "log";
+	private static final String SPANS_IN_FLIGHT_KEY = "spansInFlight";
 
 	private static Logger logger = LoggerFactory.getLogger(ZipkinLoggerConnector.class);
 
+	private Tracing tracing;
+	private AsyncReporter<Span> reporter = null;
+	private Tracer tracer;
+	private String serviceName;
+
+	/**
+	 * Creates new synchronous trace and new parent span. Requires subsequent
+	 * {@link finish-span} element to complete and publish the trace.
+	 * 
+	 * @param logMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "log"
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param ServerOrClientSpanType
+	 *            indicator whether the span is logged as SERVER or CLIENT
+	 *            brave.span.Kind
+	 * @param spanName
+	 *            name of the span
+	 * @param traceName
+	 *            name of the trace
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData createNewTrace(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
@@ -70,6 +98,25 @@ public class ZipkinLoggerConnector {
 
 	}
 
+	/**
+	 * Creates new span and adds it to the internally managed parent span that
+	 * has to exist. Requires subsequent {@link finish-span} element to complete
+	 * and publish the trace.
+	 * 
+	 * @param logMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "log"
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param ServerOrClientSpanType
+	 *            indicator whether the span is logged as SERVER or CLIENT
+	 *            brave.span.Kind
+	 * @param spanName
+	 *            name of the span
+	 * @param parentSpanId
+	 *            spanId of the internally managed span to join
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData joinSpan(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
@@ -93,6 +140,33 @@ public class ZipkinLoggerConnector {
 
 	}
 
+	/**
+	 * Creates new span and adds it to the externally originated parent span
+	 * known through its B3 propagation attributes. Requires subsequent
+	 * {@link finish-span} element to complete and publish the trace.
+	 * 
+	 * @param logMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "log"
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param ServerOrClientSpanType
+	 *            indicator whether the span is logged as SERVER or CLIENT
+	 *            brave.span.Kind
+	 * @param spanName
+	 *            name of the span
+	 * @param spanId
+	 *            spanId of external span to join
+	 * @param parentSpanId
+	 *            parentSpanId of external span to join
+	 * @param traceId
+	 *            traceId of external span to join
+	 * @param sampled
+	 *            sampled value ("1" or "0") of external span to join
+	 * @param flags
+	 *            flags (debug - "1" or "0") of external span to join
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData joinExternalSpan(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
@@ -124,6 +198,13 @@ public class ZipkinLoggerConnector {
 
 	}
 
+	/**
+	 * Finishes an internally managed synchronous span known by its spanId
+	 * 
+	 * @param expressionToGetSpanId
+	 *            spanId of internally managed span (not async) to finish
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
 
@@ -138,6 +219,25 @@ public class ZipkinLoggerConnector {
 
 	}
 
+	/**
+	 * Creates new trace and an asynchronous span. The trace and the span are
+	 * submitted immediately without the need for subsequent finish-span
+	 * element.
+	 * 
+	 * @param logMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "log"
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param ServerOrClientSpanType
+	 *            indicator whether the span is logged as SERVER or CLIENT
+	 *            brave.span.Kind
+	 * @param spanName
+	 *            name of the span
+	 * @param traceName
+	 *            name of the trace
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData createNewTraceAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
@@ -150,6 +250,25 @@ public class ZipkinLoggerConnector {
 
 	}
 
+	/**
+	 * Creates new asynchronous span and adds it to the internally managed
+	 * parent span that has to exist. The trace and the span are submitted
+	 * immediately without the need for subsequent finish-span element.
+	 * 
+	 * @param logMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "log"
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param ServerOrClientSpanType
+	 *            indicator whether the span is logged as SERVER or CLIENT
+	 *            brave.span.Kind
+	 * @param spanName
+	 *            name of the span
+	 * @param parentSpanId
+	 *            spanId of an internally managed parent span
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData joinSpanAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
@@ -172,6 +291,34 @@ public class ZipkinLoggerConnector {
 				spanIdLong, traceIdLong, nullableSampled, debug);
 	}
 
+	/**
+	 * Creates new asynchronous span and adds it to the externally originated
+	 * parent span that is sent using B3 proapgation attributes. The trace and
+	 * the span are submitted immediately without the need for subsequent
+	 * finish-span element.
+	 * 
+	 * @param logMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "log"
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param ServerOrClientSpanType
+	 *            indicator whether the span is logged as SERVER or CLIENT
+	 *            brave.span.Kind
+	 * @param spanName
+	 *            name of the span
+	 * @param spanId
+	 *            spanId of external span to join
+	 * @param parentSpanId
+	 *            parentSpanId of external span to join
+	 * @param traceId
+	 *            traceId of external span to join
+	 * @param sampled
+	 *            sampled value ("1" or "0") of external span to join
+	 * @param flags
+	 *            flags (debug - "1" or "0") of external span to join
+	 * @return payload with {@link SpanData} POJO
+	 */
 	@Processor
 	public SpanData joinExternalSpanAsync(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
@@ -264,10 +411,6 @@ public class ZipkinLoggerConnector {
 		logger.debug("ZipkinLogger shutdown called");
 	}
 
-	public Map<String, brave.Span> getSpansInFlight() {
-		return registry.get(SPANS_IN_FLIGHT_KEY);
-	}
-
 	private SpanData createAndStartSpanWithParent(String logMessage, Map<String, String> additionalTags,
 			Kind ServerOrClientSpanType, String spanName, Long parentIdLong, long spanIdLong, long traceIdLong,
 			Boolean nullableSampled, Boolean debug) {
@@ -346,6 +489,10 @@ public class ZipkinLoggerConnector {
 		span.start().flush();
 
 		return extractSpanData(span);
+	}
+
+	public Map<String, brave.Span> getSpansInFlight() {
+		return registry.get(SPANS_IN_FLIGHT_KEY);
 	}
 
 	public AbstractConfig getConfig() {

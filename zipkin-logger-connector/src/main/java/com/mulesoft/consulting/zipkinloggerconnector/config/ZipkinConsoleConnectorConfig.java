@@ -4,6 +4,12 @@ import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.components.Configuration;
 import org.mule.api.annotations.param.Default;
 
+/*
+ * Zipkin connector configuration that logs spans to console. Useful for testing purposes.
+ * 
+ * @author michaelhyatt
+ * 
+ */
 @Configuration(friendlyName = "Zipkin Console Logging Configuration", configElementName = "console-config")
 public class ZipkinConsoleConnectorConfig extends AbstractConfig {
 
@@ -18,6 +24,9 @@ public class ZipkinConsoleConnectorConfig extends AbstractConfig {
 		return serviceName;
 	}
 
+	/*
+	 * @param serviceName Service name to apply to logged spans
+	 */
 	public void setServiceName(String serviceName) {
 		this.serviceName = serviceName;
 	}

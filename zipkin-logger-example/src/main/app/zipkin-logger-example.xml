@@ -23,10 +23,6 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             <logger message="Starting a call" level="INFO" doc:name="Logger"/>
         </poll>
         <zipkin-logger:create-new-trace config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration" logMessage="This is message 1" spanName="myspan1" traceName="mytrace1" ServerOrClientSpanType="CLIENT" doc:name="Start sync trace">
-            <zipkin-logger:additional-tags>
-                <zipkin-logger:additional-tag key="Entry">entry1</zipkin-logger:additional-tag>
-                <zipkin-logger:additional-tag key="Entry2">Entry2222</zipkin-logger:additional-tag>
-            </zipkin-logger:additional-tags>
         </zipkin-logger:create-new-trace>
         <set-variable variableName="newSpanId" value="#[payload]" doc:name="Save payload with SpanData in a flowVar"/>
         <message-properties-transformer doc:name="Populate message headers with span propagation data">

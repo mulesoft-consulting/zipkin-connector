@@ -9,6 +9,12 @@ public class ZipkinHttpConnectorConfig extends AbstractConfig {
 
 	/**
 	 * Zipkin URL
+	 * 
+	 * Example:
+	 * 
+	 * <pre>
+	 * http://127.0.0.1:9411/api/v1/spans
+	 * </pre>
 	 */
 	@Configurable
 	@Default("http://127.0.0.1:9411/api/v1/spans")
@@ -31,9 +37,6 @@ public class ZipkinHttpConnectorConfig extends AbstractConfig {
 		this.zipkinUrl = url;
 	}
 
-	/**
-	 * Get greeting message
-	 */
 	public String getZipkinUrl() {
 		return this.zipkinUrl;
 	}
@@ -41,16 +44,14 @@ public class ZipkinHttpConnectorConfig extends AbstractConfig {
 	/**
 	 * Set service name
 	 *
-	 * @param name
-	 *            Service name to report to Zipkin
+	 * @param serviceName
+	 *            Service name to apply to logged spans
+	 * 
 	 */
-	public void setServiceName(String name) {
-		this.serviceName = name;
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
 	}
 
-	/**
-	 * Get reply
-	 */
 	public String getServiceName() {
 		return this.serviceName;
 	}
