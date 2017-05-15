@@ -128,7 +128,7 @@ Currently, there are two configuration options available: console and HTTP. Cons
 ```
 ## Installation
 ### Mule connector
-Open Anypoint Studio, go to Help → Install New Software and add Zipkin Logger Update Site. This will allow you to find the version to install. The update site is **https://github.com/mulesoft-consulting/zipkin-connector/tree/master/zipkin-logger-connector/target/update-site**
+Open Anypoint Studio, go to Help → Install New Software and add Zipkin Logger Update Site. This will allow you to find the version to install. The update site is https://github.com/mulesoft-consulting/zipkin-connector/tree/master/zipkin-logger-connector/target/update-site
 
 ### Zipkin server
 Described in details [here](https://github.com/openzipkin/zipkin#quick-start).
