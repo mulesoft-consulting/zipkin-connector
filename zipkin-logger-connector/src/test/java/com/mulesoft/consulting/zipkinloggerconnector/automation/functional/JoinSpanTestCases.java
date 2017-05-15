@@ -1,9 +1,9 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -11,8 +11,8 @@ import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
 import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import com.mulesoft.consulting.zipkinloggerconnector.model.SpanData;
 
-import brave.Span;
 import brave.Span.Kind;
 
 public class JoinSpanTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
@@ -40,31 +40,26 @@ public class JoinSpanTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
 
 		Kind ServerOrClientSpanType = Kind.SERVER;
 		String spanName = "span1";
-		String flowVariableToSetWithId = "test";
 		String traceName = "mytrace";
 
-		getConnector().createNewTrace(null, logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, traceName);
+		SpanData spanData1 = getConnector().createNewTrace(logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				traceName);
 
-		Span span1 = getConnector().getSpansInFlight().values().iterator().next();
-
-		String spanId1 = Long.toHexString(span1.context().spanId());
+		String spanId1 = spanData1.getSpanId();
 
 		brave.Span.Kind ServerOrClientSpanType1 = Kind.CLIENT;
 		java.lang.String spanName1 = "myspan";
-		java.lang.String flowVariableToSetWithId2 = "tess";
 
-		getConnector().joinSpan(null, logMessage, additionalTags, ServerOrClientSpanType1, spanName1,
-				flowVariableToSetWithId2, spanId1);
-		Set<String> keys = new HashSet<String>(getConnector().getSpansInFlight().keySet());
+		SpanData spanData2 = getConnector().joinSpan(logMessage, additionalTags, ServerOrClientSpanType1, spanName1,
+				spanId1);
 
-		keys.remove(spanId1);
-
-		String spanId2 = keys.iterator().next();
+		String spanId2 = spanData2.getSpanId();
 
 		getConnector().finishSpan(spanId2);
 
 		getConnector().finishSpan(spanId1);
+
+		assertEquals(spanData1.getSpanId(), spanData2.getParentSpanId());
 	}
 
 }

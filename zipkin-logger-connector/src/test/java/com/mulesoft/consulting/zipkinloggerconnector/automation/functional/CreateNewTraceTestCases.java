@@ -1,5 +1,7 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Map;
 
 import org.junit.After;
@@ -8,8 +10,8 @@ import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
 import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import com.mulesoft.consulting.zipkinloggerconnector.model.SpanData;
 
-import brave.Span;
 import brave.Span.Kind;
 
 public class CreateNewTraceTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
@@ -37,17 +39,16 @@ public class CreateNewTraceTestCases extends AbstractTestCase<ZipkinLoggerConnec
 
 		Kind ServerOrClientSpanType = Kind.SERVER;
 		String spanName = "span1";
-		String flowVariableToSetWithId = "test";
 		String traceName = "mytrace";
 
-		getConnector().createNewTrace(null, logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, traceName);
-		
-		Span span = getConnector().getSpansInFlight().values().iterator().next();
-		
-		String spanId = Long.toHexString(span.context().spanId());
-		
+		SpanData spanData = getConnector().createNewTrace(logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				traceName);
+
+		String spanId = spanData.getSpanId();
+
 		getConnector().finishSpan(spanId);
+
+		assertEquals(spanId, spanData.getSpanId());
 
 	}
 

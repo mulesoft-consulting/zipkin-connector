@@ -1,5 +1,8 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +12,7 @@ import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
 import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import com.mulesoft.consulting.zipkinloggerconnector.model.SpanData;
 
 import brave.Span.Kind;
 
@@ -38,7 +42,11 @@ public class CreateNewTraceAsyncTestCases extends AbstractTestCase<ZipkinLoggerC
 		String spanName = "span1";
 		String traceName = "mytrace";
 
-		getConnector().createNewTraceAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, traceName);
+		SpanData span = getConnector().createNewTraceAsync(logMessage, additionalTags, ServerOrClientSpanType, spanName, traceName);
+		
+		assertNotNull(span);
+		
+		assertEquals(span.getSpanId(), span.getParentSpanId());
 	}
 
 }

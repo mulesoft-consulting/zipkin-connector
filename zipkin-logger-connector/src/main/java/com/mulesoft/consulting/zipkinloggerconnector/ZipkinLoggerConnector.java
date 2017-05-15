@@ -5,7 +5,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.mule.api.MuleContext;
 import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
@@ -47,9 +46,6 @@ public class ZipkinLoggerConnector {
 	@Config
 	AbstractConfig config;
 
-	@Inject
-	MuleContext muleContext;
-
 	private Tracing tracing;
 	private AsyncReporter<Span> reporter = null;
 
@@ -78,7 +74,6 @@ public class ZipkinLoggerConnector {
 	public SpanData joinSpan(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
-			@Default(value = "newSpanId") String flowVariableToSetWithId,
 			@Default("#[flowVars.spanId]") String parentSpanId) {
 
 		brave.Span parentSpan = getSpansInFlight().get(parentSpanId);
@@ -93,8 +88,8 @@ public class ZipkinLoggerConnector {
 		Boolean nullableSampled = parentSpan.context().sampled();
 		Boolean debug = parentSpan.context().debug();
 
-		return createAndStartSpanWithParent(logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
+		return createAndStartSpanWithParent(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong,
+				spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
 
@@ -102,7 +97,6 @@ public class ZipkinLoggerConnector {
 	public SpanData joinExternalSpan(@Optional @Default("#[]") String logMessage,
 			@Optional @Default("#[]") Map<String, String> additionalTags,
 			@Default(value = "SERVER") Kind ServerOrClientSpanType, @Default(value = "myspan") String spanName,
-			@Default(value = "spanId") String flowVariableToSetWithId,
 			@Default("#[message.inboundProperties.'x-b3-spanid']") String spanId,
 			@Default("#[message.inboundProperties.'x-b3-parentspanid']") String parentSpanId,
 			@Default("#[message.inboundProperties.'x-b3-traceid']") String traceId,
@@ -125,8 +119,8 @@ public class ZipkinLoggerConnector {
 			if (flags.equals("1"))
 				debug = true;
 
-		return createAndStartSpanWithParent(logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, parentIdLong, spanIdLong, traceIdLong, nullableSampled, debug);
+		return createAndStartSpanWithParent(logMessage, additionalTags, ServerOrClientSpanType, spanName, parentIdLong,
+				spanIdLong, traceIdLong, nullableSampled, debug);
 
 	}
 
@@ -270,14 +264,12 @@ public class ZipkinLoggerConnector {
 		logger.debug("ZipkinLogger shutdown called");
 	}
 
-	@Processor
 	public Map<String, brave.Span> getSpansInFlight() {
 		return registry.get(SPANS_IN_FLIGHT_KEY);
 	}
 
-	private SpanData createAndStartSpanWithParent(String logMessage,
-			Map<String, String> additionalTags, Kind ServerOrClientSpanType, String spanName,
-			String flowVariableToSetWithId, Long parentIdLong, long spanIdLong, long traceIdLong,
+	private SpanData createAndStartSpanWithParent(String logMessage, Map<String, String> additionalTags,
+			Kind ServerOrClientSpanType, String spanName, Long parentIdLong, long spanIdLong, long traceIdLong,
 			Boolean nullableSampled, Boolean debug) {
 
 		TraceContext parent = TraceContext.newBuilder().parentId(parentIdLong).spanId(spanIdLong).traceId(traceIdLong)
@@ -288,8 +280,8 @@ public class ZipkinLoggerConnector {
 		return startSpan(logMessage, additionalTags, ServerOrClientSpanType, spanName, span);
 	}
 
-	private SpanData startSpan(String logMessage, Map<String, String> additionalTags,
-			Kind ServerOrClientSpanType, String spanName, brave.Span span) {
+	private SpanData startSpan(String logMessage, Map<String, String> additionalTags, Kind ServerOrClientSpanType,
+			String spanName, brave.Span span) {
 
 		span.name(spanName).kind(ServerOrClientSpanType);
 
@@ -362,14 +354,6 @@ public class ZipkinLoggerConnector {
 
 	public void setConfig(AbstractConfig config) {
 		this.config = config;
-	}
-
-	public MuleContext getMuleContext() {
-		return muleContext;
-	}
-
-	public void setMuleContext(MuleContext muleContext) {
-		this.muleContext = muleContext;
 	}
 
 	public void setRegistry(Registry registry) {

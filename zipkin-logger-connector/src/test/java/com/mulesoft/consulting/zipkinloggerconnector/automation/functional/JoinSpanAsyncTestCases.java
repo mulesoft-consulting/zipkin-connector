@@ -9,8 +9,8 @@ import org.junit.Test;
 import org.mule.tools.devkit.ctf.junit.AbstractTestCase;
 
 import com.mulesoft.consulting.zipkinloggerconnector.ZipkinLoggerConnector;
+import com.mulesoft.consulting.zipkinloggerconnector.model.SpanData;
 
-import brave.Span;
 import brave.Span.Kind;
 
 public class JoinSpanAsyncTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
@@ -38,20 +38,19 @@ public class JoinSpanAsyncTestCases extends AbstractTestCase<ZipkinLoggerConnect
 
 		Kind ServerOrClientSpanType = Kind.SERVER;
 		String spanName = "span1";
-		String flowVariableToSetWithId = "test";
 		String traceName = "mytrace";
 
-		getConnector().createNewTrace(null, logMessage, additionalTags, ServerOrClientSpanType, spanName,
-				flowVariableToSetWithId, traceName);
+		SpanData spanData = getConnector().createNewTrace(logMessage, additionalTags, ServerOrClientSpanType, spanName,
+				traceName);
 
-		Span span1 = getConnector().getSpansInFlight().values().iterator().next();
-
-		String spanId1 = Long.toHexString(span1.context().spanId());
+		String spanId1 = spanData.getSpanId();
 
 		brave.Span.Kind ServerOrClientSpanType1 = Kind.CLIENT;
 		java.lang.String spanName1 = "myspan";
 
 		getConnector().joinSpanAsync(logMessage, additionalTags, ServerOrClientSpanType1, spanName1, spanId1);
+		
+		getConnector().finishSpan(spanId1);
 	}
 
 }
