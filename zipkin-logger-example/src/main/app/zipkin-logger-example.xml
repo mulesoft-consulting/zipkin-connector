@@ -70,7 +70,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 		<enricher target="#[variable:spanId1]" doc:name="Message Enricher">
 			<zipkin-logger:join-external-span
 				config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1"
-				logMessage="This is the rythm of the night" spanName="myspan2"
+				logMessage="This is the message" spanName="myspan2"
 				doc:name="Join external trace">
 				<zipkin-logger:additional-tags>
 					<zipkin-logger:additional-tag key="Entry123">More Work</zipkin-logger:additional-tag>
@@ -80,7 +80,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 		<flow-ref name="zipkin-logger-google-proxy-subflow" doc:name="zipkin-logger-google-proxy-subflow" />
 		<zipkin-logger:finish-span
 			config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1"
-			expressionToGetSpanId="#[flowVars.spanId1.spanId]" doc:name="Finish Zipkin span #2" />
+			expressionToGetSpanId="#[flowVars.spanId1.spanId]" doc:name="Finish Zipkin span #2" finishSpanLogMessage="Some final logging"/>
 		<set-payload value="{&quot;result&quot;: &quot;success&quot;}"
 			doc:name="Set Response Payload" />
 	</flow>
@@ -104,7 +104,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 		<flow-ref name="zipkin-logger-exampleSub_Flow" doc:name="zipkin-logger-exampleSub_Flow" />
 		<zipkin-logger:finish-span
 			config-ref="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration2"
-			expressionToGetSpanId="#[flowVars.spanId2.spanId]" doc:name="Finish Zipkin Span #3" />
+			expressionToGetSpanId="#[flowVars.spanId2.spanId]" doc:name="Finish Zipkin Span #3" quietSpanNotFound="true"/>
 	</sub-flow>
 	<sub-flow name="zipkin-logger-exampleSub_Flow">
 		<logger message="1" level="INFO" doc:name="Logger" />
