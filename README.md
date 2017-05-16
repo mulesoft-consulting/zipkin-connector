@@ -1,5 +1,6 @@
 # zipkin-connector
-Zipkin connector for Mule that allows tracing and logging of requests traversing Mule components. Zipkin is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both, the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](https://research.google.com/pubs/pub36356.html).
+Zipkin connector for Mule that allows tracing and logging of requests traversing Mule components. Zipkin is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both, the collection and lookup of this data. Zipkin server allows for searching and sorting of aggregated spans, and also supports dynamic visualisation of the dependencies graph between logging components.
+Zipkin’s design is based on the [Google Dapper paper](https://research.google.com/pubs/pub36356.html).
 
 ## Overview
 Zipkin connector can be used un Mule flows to trace execution of activities, time external callouts, and event logging. Mule tracing can be integrated with tracing in other systems and applications and an end to end performance analysis can be performed. 
@@ -141,3 +142,7 @@ Described in details [here](https://github.com/openzipkin/zipkin#quick-start).
  * [Zipkin brave Java client library](https://github.com/openzipkin/brave)
  * [Dapper paper](https://research.google.com/pubs/pub36356.html)
  * [Mule example](zipkin-logger-example)
+ 
+ ## TO DO
+ * Add support for zipkin-opentracing bridge.
+ * Investigate and add support for integration with log aggregators, such as Splunk, Loggly, etc.
