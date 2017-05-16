@@ -121,17 +121,23 @@ Currently, there are two configuration options available: console and HTTP. Cons
 		serviceName="my-service-1" doc:name="Zipkin Logger: Zipkin Console Logging Configuration" />
 	<zipkin-logger:http-config
 		name="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration2" serviceName="my-service-2"
-		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration" />
+		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration"
+		zipkinUrl="http://127.0.0.1:9411/api/v1/spans"/>
 	<zipkin-logger:http-config
 		name="Zipkin_Logger__Zipkin_HTTP_Logging_Configuration1" serviceName="my-service-1"
-		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration" />		
+		doc:name="Zipkin Logger: Zipkin HTTP Logging Configuration"
+		zipkinUrl="http://127.0.0.1:9411/api/v1/spans"/>
 ```
 ## Installation
 ### Mule connector
+Open Anypoint Studio, go to Help → Install New Software and add Zipkin Logger Update Site. This will allow you to find the version to install. The update site is https://github.com/mulesoft-consulting/zipkin-connector/tree/master/zipkin-logger-connector/target/update-site
 
 ### Zipkin server
+Described in details [here](https://github.com/openzipkin/zipkin#quick-start).
 
 ## More information
-### Zipkin
-
-### Mule example
+ * [Zipkin](http://zipkin.io/)
+ * [Zipkin Github repo](https://github.com/openzipkin/zipkin)
+ * [Zipkin brave Java client library](https://github.com/openzipkin/brave)
+ * [Dapper paper](https://research.google.com/pubs/pub36356.html)
+ * [Mule example](zipkin-logger-example)
