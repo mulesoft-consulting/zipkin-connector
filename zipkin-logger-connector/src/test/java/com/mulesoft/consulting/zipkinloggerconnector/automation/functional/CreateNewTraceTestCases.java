@@ -46,7 +46,7 @@ public class CreateNewTraceTestCases extends AbstractTestCase<ZipkinLoggerConnec
 
 		String spanId = spanData.getSpanId();
 
-		getConnector().finishSpan(spanId);
+		getConnector().finishSpan(spanId, "test", null, false);
 
 		assertEquals(spanId, spanData.getSpanId());
 

@@ -54,7 +54,7 @@ public class JoinExternalSpanAsyncTestCases extends AbstractTestCase<ZipkinLogge
 		getConnector().joinExternalSpanAsync(logMessage, additionalTags, ServerOrClientSpanType1, spanName1, spanId1,
 				spanId1, traceId, sampled, flags);
 
-		getConnector().finishSpan(spanId1);
+		getConnector().finishSpan(spanId1, "123!@3", additionalTags, null);
 	}
 
 }

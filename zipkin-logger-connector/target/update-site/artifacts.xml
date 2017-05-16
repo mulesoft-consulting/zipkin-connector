@@ -2,7 +2,7 @@
 <?artifactRepository version='1.1.0'?>
 <repository name='file:/Users/michaelhyatt/git/zipkin-connector/zipkin-logger-connector/target/update-site/ - artifacts' type='org.eclipse.equinox.p2.artifact.repository.simpleRepository' version='1'>
   <properties size='2'>
-    <property name='p2.timestamp' value='1494836329330'/>
+    <property name='p2.timestamp' value='1494967943819'/>
     <property name='p2.compressed' value='false'/>
   </properties>
   <mappings size='3'>
@@ -11,18 +11,18 @@
     <rule filter='(&amp; (classifier=org.eclipse.update.feature))' output='${repoUrl}/features/${id}_${version}.jar'/>
   </mappings>
   <artifacts size='2'>
-    <artifact classifier='osgi.bundle' id='org.mule.tooling.ui.contribution.zipkin-logger.3.8.0' version='1.0.0.201705151818'>
+    <artifact classifier='osgi.bundle' id='org.mule.tooling.ui.contribution.zipkin-logger.3.8.0' version='1.0.0.201705170652'>
       <properties size='3'>
-        <property name='artifact.size' value='1246366'/>
-        <property name='download.size' value='1246366'/>
-        <property name='download.md5' value='129cbb4127a256244a30cef975d15c5a'/>
+        <property name='artifact.size' value='1251547'/>
+        <property name='download.size' value='1251547'/>
+        <property name='download.md5' value='ed3f69d93e653c2942ccf629e285dceb'/>
       </properties>
     </artifact>
-    <artifact classifier='org.eclipse.update.feature' id='org.mule.tooling.ui.extension.zipkin-logger-connector.3.8.0' version='1.0.0.201705151818'>
+    <artifact classifier='org.eclipse.update.feature' id='org.mule.tooling.ui.extension.zipkin-logger-connector.3.8.0' version='1.0.0.201705170652'>
       <properties size='4'>
-        <property name='artifact.size' value='4587'/>
-        <property name='download.size' value='4587'/>
-        <property name='download.md5' value='d171a76209ba4dab9a563df02211cdc1'/>
+        <property name='artifact.size' value='4585'/>
+        <property name='download.size' value='4585'/>
+        <property name='download.md5' value='422cb4a86545ffeba13a3f50ab4142b4'/>
         <property name='download.contentType' value='application/zip'/>
       </properties>
     </artifact>

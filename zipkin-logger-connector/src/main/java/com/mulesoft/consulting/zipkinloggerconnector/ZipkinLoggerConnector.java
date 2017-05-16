@@ -36,12 +36,14 @@ import zipkin.reporter.okhttp3.OkHttpSender;
  * Zipkin is a distributed tracing system. It helps gather timing data needed to
  * troubleshoot latency problems in microservice architectures. It manages both
  * the collection and lookup of this data. Zipkin’s design is based on the
- * Google Dapper paper. 
+ * Google Dapper paper.
  * 
  * @see <a href="http://zipkin.io/">Zipkin</a>
  * @see <a href="https://github.com/openzipkin/zipkin">Zipkin Github repo</a>
- * @see <a href="https://github.com/openzipkin/brave">Zipkin brave Java client library</a>
- * @see <a href="https://research.google.com/pubs/pub36356.html">Dapper paper</a>
+ * @see <a href="https://github.com/openzipkin/brave">Zipkin brave Java client
+ *      library</a>
+ * @see <a href="https://research.google.com/pubs/pub36356.html">Dapper
+ *      paper</a>
  * 
  * @author michaelhyatt
  *
@@ -56,8 +58,9 @@ public class ZipkinLoggerConnector {
 	Registry registry;
 
 	private static final String LOGGER_KEY = "log";
-	private static final String SPANS_IN_FLIGHT_KEY = "spansInFlight";
+	private static final String FINISH_LOGGER_KEY = "finish-log";
 
+	private static final String SPANS_IN_FLIGHT_KEY = "spansInFlight";
 	private static Logger logger = LoggerFactory.getLogger(ZipkinLoggerConnector.class);
 
 	private Tracing tracing;
@@ -199,21 +202,40 @@ public class ZipkinLoggerConnector {
 	 * Finishes an internally managed synchronous span known by its spanId
 	 * 
 	 * @param expressionToGetSpanId
-	 *            spanId of internally managed span (not async) to finish
+	 *            spanId to finish
+	 * @param additionalTags
+	 *            additional map of tags to add as Map
+	 * @param quietSpanNotFound
+	 *            Do not throw an exception, if the span is not found
+	 * @param finishSpanLogMessage
+	 *            Logged message that will be added as one of the tags with name
+	 *            "finish-log"
 	 * @return payload with {@link SpanData} POJO
 	 */
 	@Processor
-	public SpanData finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId) {
+	public SpanData finishSpan(@Default(value = "#[flowVars.spanId]") String expressionToGetSpanId,
+			@Optional @Default("#[]") String finishSpanLogMessage,
+			@Optional @Default("#[]") Map<String, String> additionalTags, @Default("false") Boolean quietSpanNotFound) {
 
 		brave.Span span = getSpansInFlight().remove(expressionToGetSpanId);
 
-		if (span != null) {
-			span.finish();
-			return extractSpanData(span);
-		} else {
-			throw new RuntimeException("Span " + expressionToGetSpanId + " not found");
-		}
+		if (span == null)
+			if (quietSpanNotFound)
+				return null;
+			else
+				throw new RuntimeException("Span " + expressionToGetSpanId + " not found");
 
+		// Create logging record and get the tags
+		if (finishSpanLogMessage != null && !finishSpanLogMessage.equals(""))
+			span.tag(FINISH_LOGGER_KEY, finishSpanLogMessage);
+
+		if (additionalTags != null)
+			for (String key : additionalTags.keySet()) {
+				span.tag(key, additionalTags.get(key));
+			}
+
+		span.finish();
+		return extractSpanData(span);
 	}
 
 	/**

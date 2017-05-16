@@ -50,7 +50,7 @@ public class JoinSpanAsyncTestCases extends AbstractTestCase<ZipkinLoggerConnect
 
 		getConnector().joinSpanAsync(logMessage, additionalTags, ServerOrClientSpanType1, spanName1, spanId1);
 		
-		getConnector().finishSpan(spanId1);
+		getConnector().finishSpan(spanId1, "tr", additionalTags, null);
 	}
 
 }

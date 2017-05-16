@@ -1,5 +1,7 @@
 package com.mulesoft.consulting.zipkinloggerconnector.automation.functional;
 
+import static org.junit.Assert.assertNull;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,9 +26,15 @@ public class FinishSpanTestCases extends AbstractTestCase<ZipkinLoggerConnector>
 	}
 
 	@Test(expected = RuntimeException.class)
-	public void verify() {
+	public void verifyException() {
 
-		getConnector().finishSpan("1231231");
+		getConnector().finishSpan("12", "test", null, false);
+	}
+
+	@Test
+	public void verifyNoException() {
+
+		assertNull(getConnector().finishSpan("12", "test", null, true));
 	}
 
 }

@@ -55,9 +55,9 @@ public class JoinSpanTestCases extends AbstractTestCase<ZipkinLoggerConnector> {
 
 		String spanId2 = spanData2.getSpanId();
 
-		getConnector().finishSpan(spanId2);
+		getConnector().finishSpan(spanId2, "23123", additionalTags, null);
 
-		getConnector().finishSpan(spanId1);
+		getConnector().finishSpan(spanId1, "fff", additionalTags, null);
 
 		assertEquals(spanData1.getSpanId(), spanData2.getParentSpanId());
 	}
